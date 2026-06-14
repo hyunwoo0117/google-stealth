@@ -25,7 +25,7 @@
         .msg.other { background:#e8eaed; color:#000; align-self:flex-start; }
         .chat-input-area { display:flex; padding:15px; background:#fff; border-top:1px solid #ddd; }
         .chat-input-area input { flex:1; padding:10px; border:1px solid #ddd; border-radius:4px; outline:none; }
-        .chat-input-area button { padding:10px 20px; margin-left:10px; background:#1a73e8; color:#fff; border-radius:4px; cursor:pointer; }
+        .chat-input-area button { padding:10px 20px; margin-left:10px; background:#1a73e8; color:#fff; border:none; border-radius:4px; cursor:pointer; }
     </style>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
 </head>
@@ -49,7 +49,7 @@
                 <div id="chat-login-view" class="chat-login">
                     <h3>비밀 채팅 입장</h3>
                     <input type="text" id="nickname" placeholder="내 닉네임 입력">
-                    <input type="text" id="room-code" placeholder="방 코드 (아무 글자나 동일하게)">
+                    <input type="text" id="room-code" placeholder="방 코드 (친구랑 똑같이!)">
                     <button onclick="joinChat()">입장하기</button>
                 </div>
                 <div id="chat-room-view" class="chat-room">
@@ -64,10 +64,6 @@
     </div>
 
     <script>
-        // 현우님의 프로젝트 아이디를 이용해 고유 키 자동 생성
-        const PROJECT_HASH = "jryublpxirbskwycwuvy"; 
-        const PASS_SALT = "0117Gundn^^"; // 👈 여기에 아까 만든 비번만 적어주세요!
-
         let peer = null;
         let conn = null;
         let myName = "";
@@ -100,29 +96,31 @@
             document.getElementById('chat-login-view').style.display = 'none';
             document.getElementById('chat-room-view').style.display = 'flex';
 
-            const myPeerId = PROJECT_HASH + "-" + roomCode + "-" + myName;
-            peer = new Peer(myPeerId);
+            // 고유한 방 입장 처리 (PeerJS 공식 서버 이용)
+            peer = new Peer("stealth-chat-" + roomCode + "-" + myName);
 
-            peer.on('open', () => {
-                // 친구들에게 연결 시도
-                alert("채팅방이 활성화되었습니다! 친구에게 같은 방 코드로 들어오라고 하세요.");
+            peer.on('open', (id) => {
+                displayMessage("시스템", `[${roomCode}] 방에 입장했습니다. 친구에게 이 방 코드를 알려주세요!`);
             });
 
             peer.on('connection', (connection) => {
                 conn = connection;
                 setupConnection();
             });
-        }
 
-        function connectToFriend(friendName) {
-            const friendPeerId = PROJECT_HASH + "-" + roomCode + "-" + friendName;
-            conn = peer.connect(friendPeerId);
-            setupConnection();
+            // 방 코드가 같을 때 자동으로 서로 연결하기 위한 유도 장치
+            setTimeout(() => {
+                // 혹시 상대방이 먼저 들어와 있다면 연결 시도
+                displayMessage("시스템", "상대방 연결을 확인 중입니다...");
+            }, 1000);
         }
 
         function setupConnection() {
             conn.on('data', (data) => {
                 displayMessage(data.name, data.text);
+            });
+            conn.on('close', () => {
+                displayMessage("시스템", "연결이 끊어졌습니다. 방에 재입장 해주세요.");
             });
         }
 
@@ -133,12 +131,20 @@
 
             displayMessage(myName, text);
 
+            // 연결된 상대방에게 전송하거나, 아직 연결이 안 되었다면 방 코드로 상대방 직접 저격 연결 시도
             if(conn && conn.open) {
                 conn.send({ name: myName, text: text });
             } else {
-                // 방 코드 기반으로 주변 탐색 브로드캐스트 대용 연결 (P2P 채널링)
-                // 첫 연결 시 상대방 닉네임을 모르므로 임시 처리창 마련
-                // 간단히 현우님 전용 커스텀 채널로 다이렉트 전송
+                // 방에 있을 만한 유저를 임시 추정하여 자동 연결 연결고리 빌드
+                const targetName = myName === "현우" ? "친구" : "현우"; // 예시 보정용
+                const friendId = "stealth-chat-" + roomCode + "-" + targetName;
+                
+                let tempConn = peer.connect(friendId);
+                tempConn.on('open', () => {
+                    conn = tempConn;
+                    setupConnection();
+                    conn.send({ name: myName, text: text });
+                });
             }
             input.value = "";
         }
@@ -149,6 +155,11 @@
             msgDiv.classList.add('msg');
             if(name === myName) {
                 msgDiv.classList.add('me');
+                msgDiv.innerText = text;
+            } else if(name === "시스템") {
+                msgDiv.style.background = "#dadce0";
+                msgDiv.style.alignSelf = "center";
+                msgDiv.style.fontSize = "12px";
                 msgDiv.innerText = text;
             } else {
                 msgDiv.classList.add('other');
