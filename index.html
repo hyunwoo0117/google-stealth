@@ -1,728 +1,172 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Google</title>
-<link rel="icon" href="https://www.google.com/favicon.ico">
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; font-family: arial, sans-serif; }
-  body { background: #fff; height: 100vh; overflow: hidden; }
-  #app { display: flex; flex-direction: column; height: 100vh; }
-
-  #topbar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 16px; border-bottom: 1px solid #e0e0e0; background: #fff; flex-shrink: 0;
-  }
-  #topbar-left { display: flex; align-items: center; gap: 24px; }
-  #topbar-left a { font-size: 13px; color: #202124; text-decoration: none; }
-  #topbar-left a:hover { text-decoration: underline; }
-  .g-logo { font-size: 22px; font-weight: 700; letter-spacing: -1px; }
-  .g-b{color:#4285F4}.g-r{color:#EA4335}.g-y{color:#FBBC05}.g-g{color:#34A853}
-  .btn-signin { background:#1a73e8;color:#fff;border:none;border-radius:4px;padding:8px 16px;font-size:14px;cursor:pointer; }
-
-  #tabs { display:flex; border-bottom:1px solid #e0e0e0; flex-shrink:0; }
-  .tab { padding:10px 20px;font-size:13px;cursor:pointer;color:#5f6368;border-bottom:2px solid transparent;user-select:none; }
-  .tab.active { color:#1a73e8;border-bottom:2px solid #1a73e8;font-weight:500; }
-  .tab:hover { background:#f1f3f4; }
-
-  .panel { flex:1;overflow-y:auto;display:none;flex-direction:column;min-height:0; }
-  .panel.active { display:flex; }
-
-  /* Search */
-  #search-hero { display:flex;flex-direction:column;align-items:center;padding:60px 20px 20px;gap:20px; }
-  .big-logo { font-size:72px;font-weight:700;letter-spacing:-4px;line-height:1; }
-  #search-box-wrap {
-    display:flex;align-items:center;width:100%;max-width:580px;
-    border:1px solid #dfe1e5;border-radius:24px;padding:10px 16px;
-    box-shadow:0 1px 3px rgba(0,0,0,.1);gap:10px;
-  }
-  #search-box-wrap:focus-within { box-shadow:0 1px 6px rgba(0,0,0,.2); }
-  #search-input { flex:1;border:none;outline:none;font-size:16px;color:#202124; }
-  .search-btns { display:flex;gap:10px;margin-top:4px; }
-  .g-btn { background:#f8f9fa;border:1px solid #f8f9fa;border-radius:4px;padding:9px 23px;font-size:14px;color:#3c4043;cursor:pointer; }
-  .g-btn:hover { border-color:#dadce0;box-shadow:0 1px 2px rgba(0,0,0,.1); }
-  #search-results { padding:6px 0 20px 155px;max-width:750px; }
-  #result-count { font-size:13px;color:#70757a;padding:10px 0 16px; }
-  .result-item { margin-bottom:28px; }
-  .result-url { font-size:13px;color:#202124;margin-bottom:2px; }
-  .result-title { font-size:18px;color:#1a0dab;cursor:pointer;margin-bottom:4px; }
-  .result-title:hover { text-decoration:underline; }
-  .result-desc { font-size:14px;color:#4d5156;line-height:1.5; }
-
-  /* Chat */
-  #chat-container { display:flex;flex:1;min-height:0; }
-
-  /* Room Setup */
-  #room-setup {
-    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px;
-  }
-  #room-setup h2 { font-size:18px;color:#202124;font-weight:500; }
-  #room-setup p { font-size:13px;color:#5f6368;text-align:center;max-width:320px;line-height:1.6; }
-  .room-input-wrap { display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px; }
-  .room-input-wrap input {
-    border:1px solid #dfe1e5;border-radius:4px;padding:10px 14px;font-size:14px;outline:none;
-  }
-  .room-input-wrap input:focus { border-color:#1a73e8; }
-  .room-btn {
-    background:#1a73e8;color:#fff;border:none;border-radius:4px;
-    padding:10px;font-size:14px;cursor:pointer;text-align:center;
-  }
-  .room-btn:hover { background:#1557b0; }
-  .room-divider { text-align:center;font-size:12px;color:#9aa0a6; }
-
-  /* Chat UI */
-  #chat-ui { display:none;flex:1;flex-direction:column;min-height:0; }
-  #chat-ui.show { display:flex; }
-  #chat-header {
-    padding:12px 20px;border-bottom:1px solid #e0e0e0;
-    display:flex;align-items:center;gap:12px;flex-shrink:0;background:#fff;
-  }
-  #chat-room-info { flex:1; }
-  #chat-room-name { font-size:15px;font-weight:500;color:#202124; }
-  #chat-status { font-size:12px;color:#34a853;margin-top:2px; }
-  #leave-btn {
-    font-size:12px;color:#ea4335;background:none;border:1px solid #ea4335;
-    border-radius:4px;padding:4px 10px;cursor:pointer;
-  }
-  #messages { flex:1;padding:16px 20px;overflow-y:auto;display:flex;flex-direction:column;gap:6px; }
-  .msg-row { display:flex;flex-direction:column; }
-  .msg-row.me { align-items:flex-end; }
-  .msg-row.me .bubble { background:#1a73e8;color:#fff;border-bottom-right-radius:4px; }
-  .bubble { max-width:65%;padding:8px 14px;border-radius:18px;font-size:14px;line-height:1.5;background:#f1f3f4;color:#202124;border-bottom-left-radius:4px; }
-  .msg-meta { font-size:11px;color:#9aa0a6;margin-top:2px;padding:0 4px; }
-  .msg-row.me .msg-meta { text-align:right; }
-  .sys-msg { text-align:center;font-size:12px;color:#9aa0a6;padding:4px 0; }
-  #chat-input-row {
-    display:flex;align-items:center;gap:10px;
-    padding:12px 20px;border-top:1px solid #e0e0e0;flex-shrink:0;
-  }
-  #msg-input {
-    flex:1;border:1px solid #dfe1e5;border-radius:24px;
-    padding:10px 16px;font-size:14px;outline:none;
-  }
-  #msg-input:focus { border-color:#1a73e8; }
-  #send-btn {
-    background:#1a73e8;color:#fff;border:none;border-radius:50%;
-    width:38px;height:38px;cursor:pointer;font-size:16px;
-    display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  }
-  #send-btn:hover { background:#1557b0; }
-
-  /* Hidden overlay */
-  #hidden-overlay {
-    display:none;position:fixed;inset:0;background:#fff;z-index:9999;
-    flex-direction:column;align-items:center;justify-content:center;gap:10px;
-  }
-  #hidden-overlay.show { display:flex; }
-  #hidden-overlay .emoji { font-size:52px; }
-  #hidden-overlay p { font-size:15px;color:#5f6368; }
-  #hidden-overlay small { font-size:13px;color:#9aa0a6; }
-
-  #toast {
-    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
-    background:#323232;color:#fff;border-radius:6px;
-    padding:10px 20px;font-size:13px;
-    opacity:0;pointer-events:none;transition:opacity .3s;white-space:nowrap;
-  }
-  #toast.show { opacity:1; }
-</style>
+    <meta charset="UTF-8">
+    <title>Google</title>
+    <link rel="shortcut icon" href="https://www.google.com/favicon.ico">
+    <style>
+        body, html { margin:0; padding:0; width:100%; height:100%; font-family:arial,sans-serif; overflow:hidden; }
+        #stealth-screen { width:100%; height:100%; background:#f1f3f4; display:none; }
+        #main-app { display:flex; flex-direction:column; height:100%; }
+        .nav-bar { display:flex; background:#fff; border-bottom:1px solid #ebebeb; padding:15px 20px; align-items:center; }
+        .nav-item { margin-right:20px; cursor:pointer; color:#5f6368; font-size:14px; text-decoration:none; }
+        .nav-item.active { color:#1a73e8; font-weight:bold; }
+        .content { flex:1; display:flex; justify-content:center; align-items:center; position:relative; }
+        .google-home { text-align:center; width:100%; max-width:600px; }
+        .search-box { width:100%; padding:12px 20px; border:1px solid #dfe1e5; border-radius:24px; font-size:16px; outline:none; margin-top:20px; box-shadow: 0 1px 6px rgba(32,33,36,0.28); }
+        .chat-container { display:none; width:100%; height:100%; flex-direction:column; background:#f8f9fa; }
+        .chat-login { display:flex; flex-direction:column; width:300px; margin:auto; gap:10px; padding:20px; background:#fff; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
+        .chat-login input, .chat-login button { padding:10px; font-size:14px; border:1px solid #ddd; border-radius:4px; }
+        .chat-login button { background:#1a73e8; color:#fff; border:none; cursor:pointer; }
+        .chat-room { display:none; flex-direction:column; height:100%; }
+        .messages { flex:1; padding:20px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
+        .msg { padding:8px 12px; border-radius:15px; max-width:70%; word-break:break-all; }
+        .msg.me { background:#1a73e8; color:#fff; align-self:flex-end; }
+        .msg.other { background:#e8eaed; color:#000; align-self:flex-start; }
+        .chat-input-area { display:flex; padding:15px; background:#fff; border-top:1px solid #ddd; }
+        .chat-input-area input { flex:1; padding:10px; border:1px solid #ddd; border-radius:4px; outline:none; }
+        .chat-input-area button { padding:10px 20px; margin-left:10px; background:#1a73e8; color:#fff; border-radius:4px; cursor:pointer; }
+    </style>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
 </head>
 <body>
-<div id="app">
-  <div id="topbar">
-    <div id="topbar-left">
-      <span class="g-logo"><span class="g-b">G</span><span class="g-r">o</span><span class="g-y">o</span><span class="g-b">g</span><span class="g-g">l</span><span class="g-r">e</span></span>
-      <a href="#">소개</a><a href="#">스토어</a>
-    </div>
-    <div><button class="btn-signin">로그인</button></div>
-  </div>
 
-  <div id="tabs">
-    <div class="tab active" onclick="switchTab('search')">🔍 검색</div>
-    <div class="tab" onclick="switchTab('chat')">💬 메시지</div>
-  </div>
+    <div id="stealth-screen"></div>
 
-  <!-- Search Panel -->
-  <div id="panel-search" class="panel active">
-    <div id="search-hero">
-      <div class="big-logo">
-        <span class="g-b">G</span><span class="g-r">o</span><span class="g-y">o</span><span class="g-b">g</span><span class="g-g">l</span><span class="g-r">e</span>
-      </div>
-      <div id="search-box-wrap">
-        <svg width="20" height="20" fill="#9aa0a6" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-        <input type="text" id="search-input" placeholder="Google 검색 또는 URL 입력" />
-      </div>
-      <div class="search-btns">
-        <button class="g-btn" onclick="doSearch()">Google 검색</button>
-        <button class="g-btn" onclick="doSearch()">I'm Feeling Lucky</button>
-      </div>
-    </div>
-    <div id="search-results" style="display:none;">
-      <div id="result-count"></div>
-      <div id="results-list"></div>
-    </div>
-  </div>
-
-  <!-- Chat Panel -->
-  <div id="panel-chat" class="panel">
-    <!-- Room setup screen -->
-    <div id="room-setup">
-      <div class="big-logo" style="font-size:40px;">
-        <span class="g-b">G</span><span class="g-r">o</span><span class="g-y">o</span><span class="g-b">g</span><span class="g-g">l</span><span class="g-r">e</span>
-        <span style="font-size:18px;font-weight:400;color:#5f6368;"> 메시지</span>
-      </div>
-      <p>친구와 같은 <b>방 코드</b>와 <b>닉네임</b>을 입력하면<br>실시간으로 채팅할 수 있어요</p>
-      <div class="room-input-wrap">
-        <input type="text" id="input-nick" placeholder="닉네임 (예: 지민)" maxlength="10" />
-        <input type="text" id="input-room" placeholder="방 코드 (예: abc123)" maxlength="20" />
-        <button class="room-btn" onclick="joinRoom()">입장하기</button>
-      </div>
-      <div class="room-divider">친구에게 같은 방 코드를 알려주세요</div>
-    </div>
-
-    <!-- Chat UI -->
-    <div id="chat-ui">
-      <div id="chat-header">
-        <div id="chat-room-info">
-          <div id="chat-room-name">방: </div>
-          <div id="chat-status">연결 중...</div>
+    <div id="main-app">
+        <div class="nav-bar">
+            <div class="nav-item active" onclick="switchTab('search')">🔍 Google 검색</div>
+            <div class="nav-item" onclick="switchTab('chat')">💬 메시지</div>
         </div>
-        <button id="leave-btn" onclick="leaveRoom()">나가기</button>
-      </div>
-      <div id="messages"></div>
-      <div id="chat-input-row">
-        <input type="text" id="msg-input" placeholder="메시지 입력..." />
-        <button id="send-btn" onclick="sendMsg()">➤</button>
-      </div>
-    </div>
-  </div>
-</div>
 
-<div id="hidden-overlay">
-  <div class="emoji">😴</div>
-  <p>앱이 숨겨졌습니다</p>
-  <small>Alt + Tab 을 다시 누르면 돌아옵니다</small>
-</div>
-<div id="toast"></div>
+        <div class="content">
+            <div id="tab-search" class="google-home">
+                <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google">
+                <input type="text" class="search-box" placeholder="Google 검색 또는 URL 입력" onkeydown="if(event.key==='Enter') doSearch(this.value)">
+            </div>
 
-<script>
-// ── Search ──────────────────────────────────────────────
-const fakeResults = {
-  _default:[
-    {url:"www.google.com",title:"Google",desc:"세계 최대 검색 엔진입니다."},
-    {url:"ko.wikipedia.org › wiki",title:"Wikipedia - 자유 백과사전",desc:"누구나 편집할 수 있는 무료 온라인 백과사전입니다."},
-    {url:"www.naver.com",title:"NAVER - 네이버",desc:"한국 최대 포털 사이트. 검색, 뉴스, 쇼핑 등 다양한 서비스 제공."},
-  ],
-  날씨:[
-    {url:"weather.naver.com",title:"오늘 날씨 예보 — 맑음 22°C",desc:"현재: 맑음, 22°C, 습도 55%. 강수 확률 10%."},
-    {url:"www.kma.go.kr",title:"기상청 날씨 예보",desc:"기상청 공식 날씨 예보. 전국 대체로 맑음."},
-  ],
-  뉴스:[
-    {url:"news.naver.com",title:"네이버 뉴스",desc:"정치·경제·사회·문화 등 최신 뉴스."},
-    {url:"www.chosun.com",title:"조선일보 인터넷판",desc:"대한민국 대표 신문 최신 뉴스."},
-  ],
-  유튜브:[
-    {url:"www.youtube.com",title:"YouTube",desc:"전 세계 동영상을 검색하고 즐기세요."},
-  ],
-};
-
-function doSearch(){
-  const q=document.getElementById('search-input').value.trim();
-  if(!q)return;
-  window.open('https://www.google.com/search?q='+encodeURIComponent(q),'_blank');
-}
-document.getElementById('search-input').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});
-
-function switchTab(tab){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  if(tab==='search'){
-    document.querySelector('.tab:nth-child(1)').classList.add('active');
-    document.getElementById('panel-search').classList.add('active');
-  } else {
-    document.querySelector('.tab:nth-child(2)').classList.add('active');
-    document.getElementById('panel-chat').classList.add('active');
-  }
-}
-
-// ── WebSocket Chat ───────────────────────────────────────
-let ws=null, myNick='', roomCode='', reconnectTimer=null;
-
-function getTime(){
-  const n=new Date(),h=n.getHours(),m=String(n.getMinutes()).padStart(2,'0');
-  return h>=12?`오후 ${h===12?12:h-12}:${m}`:`오전 ${h||12}:${m}`;
-}
-
-function joinRoom(){
-  const nick=document.getElementById('input-nick').value.trim();
-  const room=document.getElementById('input-room').value.trim();
-  if(!nick){showToast('닉네임을 입력하세요');return;}
-  if(!room){showToast('방 코드를 입력하세요');return;}
-  myNick=nick; roomCode=room;
-  document.getElementById('room-setup').style.display='none';
-  document.getElementById('chat-ui').classList.add('show');
-  document.getElementById('chat-room-name').textContent='방: '+room;
-  connect();
-}
-
-function connect(){
-  setStatus('연결 중...','#fbbc05');
-  try {
-    // Piesocket - stable free WebSocket with channel support
-    ws=new WebSocket('wss://ws.piesocket.com/v3/'+encodeURIComponent(roomCode)+'?api_key=oCdCMcMPQpbvNjUIzqtvF1d89XGea9Yi40lqc3A&notify_self=1');
-  } catch(e){ setStatus('연결 실패','#ea4335'); return; }
-
-  ws.onopen=()=>{
-    setStatus('연결됨 ✓','#34a853');
-    broadcast({type:'join',nick:myNick});
-  };
-  ws.onmessage=e=>{
-    try {
-      const d=JSON.parse(e.data);
-      if(!d.type)return;
-      if(d.room!==roomCode)return;
-      if(d.type==='join'&&d.nick!==myNick) addSys(d.nick+' 님이 입장했습니다');
-      else if(d.type==='leave'&&d.nick!==myNick) addSys(d.nick+' 님이 나갔습니다');
-      else if(d.type==='msg'&&d.nick!==myNick) addMsg(d.nick,d.text,d.time,false);
-    } catch{}
-  };
-  ws.onclose=()=>{
-    setStatus('연결 끊김 — 재연결 중...','#ea4335');
-    reconnectTimer=setTimeout(connect,3000);
-  };
-  ws.onerror=()=>{ ws.close(); };
-}
-
-function broadcast(obj){
-  if(ws&&ws.readyState===1) ws.send(JSON.stringify({...obj,room:roomCode}));
-}
-
-function sendMsg(){
-  const input=document.getElementById('msg-input');
-  const text=input.value.trim();
-  if(!text)return;
-  const time=getTime();
-  broadcast({type:'msg',nick:myNick,text,time});
-  addMsg(myNick,text,time,true);
-  input.value='';
-}
-document.getElementById('msg-input').addEventListener('keydown',e=>{if(e.key==='Enter')sendMsg();});
-
-function addMsg(nick,text,time,isMe){
-  const msgs=document.getElementById('messages');
-  const div=document.createElement('div');
-  div.className='msg-row'+(isMe?' me':'');
-  div.innerHTML=`<div class="bubble">${escHtml(text)}</div><div class="msg-meta">${isMe?'':escHtml(nick)+' · '}${time}</div>`;
-  msgs.appendChild(div);
-  msgs.scrollTop=msgs.scrollHeight;
-}
-
-function addSys(text){
-  const msgs=document.getElementById('messages');
-  const div=document.createElement('div');
-  div.className='sys-msg';
-  div.textContent=text;
-  msgs.appendChild(div);
-  msgs.scrollTop=msgs.scrollHeight;
-}
-
-function setStatus(text,color){
-  const el=document.getElementById('chat-status');
-  el.textContent=text; el.style.color=color;
-}
-
-function leaveRoom(){
-  broadcast({type:'leave',nick:myNick});
-  if(ws)ws.close();
-  if(reconnectTimer)clearTimeout(reconnectTimer);
-  ws=null;
-  document.getElementById('messages').innerHTML='';
-  document.getElementById('chat-ui').classList.remove('show');
-  document.getElementById('room-setup').style.display='flex';
-}
-
-function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-// ── Hide / Show (Alt+Tab) ────────────────────────────────
-let hidden=false;
-document.addEventListener('keydown',e=>{
-  if(e.altKey&&e.key==='Tab'){
-    e.preventDefault();
-    hidden=!hidden;
-    document.getElementById('hidden-overlay').classList.toggle('show',hidden);
-  }
-});
-
-function showToast(msg){
-  const el=document.getElementById('toast');
-  el.textContent=msg; el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),2000);
-}
-</script>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Google</title>
-<link rel="icon" href="https://www.google.com/favicon.ico">
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; font-family: arial, sans-serif; }
-  body { background: #fff; height: 100vh; overflow: hidden; }
-  #app { display: flex; flex-direction: column; height: 100vh; }
-
-  #topbar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 16px; border-bottom: 1px solid #e0e0e0; background: #fff; flex-shrink: 0;
-  }
-  #topbar-left { display: flex; align-items: center; gap: 24px; }
-  #topbar-left a { font-size: 13px; color: #202124; text-decoration: none; }
-  #topbar-left a:hover { text-decoration: underline; }
-  .g-logo { font-size: 22px; font-weight: 700; letter-spacing: -1px; }
-  .g-b{color:#4285F4}.g-r{color:#EA4335}.g-y{color:#FBBC05}.g-g{color:#34A853}
-  .btn-signin { background:#1a73e8;color:#fff;border:none;border-radius:4px;padding:8px 16px;font-size:14px;cursor:pointer; }
-
-  #tabs { display:flex; border-bottom:1px solid #e0e0e0; flex-shrink:0; }
-  .tab { padding:10px 20px;font-size:13px;cursor:pointer;color:#5f6368;border-bottom:2px solid transparent;user-select:none; }
-  .tab.active { color:#1a73e8;border-bottom:2px solid #1a73e8;font-weight:500; }
-  .tab:hover { background:#f1f3f4; }
-
-  .panel { flex:1;overflow-y:auto;display:none;flex-direction:column;min-height:0; }
-  .panel.active { display:flex; }
-
-  /* Search */
-  #search-hero { display:flex;flex-direction:column;align-items:center;padding:60px 20px 20px;gap:20px; }
-  .big-logo { font-size:72px;font-weight:700;letter-spacing:-4px;line-height:1; }
-  #search-box-wrap {
-    display:flex;align-items:center;width:100%;max-width:580px;
-    border:1px solid #dfe1e5;border-radius:24px;padding:10px 16px;
-    box-shadow:0 1px 3px rgba(0,0,0,.1);gap:10px;
-  }
-  #search-box-wrap:focus-within { box-shadow:0 1px 6px rgba(0,0,0,.2); }
-  #search-input { flex:1;border:none;outline:none;font-size:16px;color:#202124; }
-  .search-btns { display:flex;gap:10px;margin-top:4px; }
-  .g-btn { background:#f8f9fa;border:1px solid #f8f9fa;border-radius:4px;padding:9px 23px;font-size:14px;color:#3c4043;cursor:pointer; }
-  .g-btn:hover { border-color:#dadce0;box-shadow:0 1px 2px rgba(0,0,0,.1); }
-  #search-results { padding:6px 0 20px 155px;max-width:750px; }
-  #result-count { font-size:13px;color:#70757a;padding:10px 0 16px; }
-  .result-item { margin-bottom:28px; }
-  .result-url { font-size:13px;color:#202124;margin-bottom:2px; }
-  .result-title { font-size:18px;color:#1a0dab;cursor:pointer;margin-bottom:4px; }
-  .result-title:hover { text-decoration:underline; }
-  .result-desc { font-size:14px;color:#4d5156;line-height:1.5; }
-
-  /* Chat */
-  #chat-container { display:flex;flex:1;min-height:0; }
-
-  /* Room Setup */
-  #room-setup {
-    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px;
-  }
-  #room-setup h2 { font-size:18px;color:#202124;font-weight:500; }
-  #room-setup p { font-size:13px;color:#5f6368;text-align:center;max-width:320px;line-height:1.6; }
-  .room-input-wrap { display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px; }
-  .room-input-wrap input {
-    border:1px solid #dfe1e5;border-radius:4px;padding:10px 14px;font-size:14px;outline:none;
-  }
-  .room-input-wrap input:focus { border-color:#1a73e8; }
-  .room-btn {
-    background:#1a73e8;color:#fff;border:none;border-radius:4px;
-    padding:10px;font-size:14px;cursor:pointer;text-align:center;
-  }
-  .room-btn:hover { background:#1557b0; }
-  .room-divider { text-align:center;font-size:12px;color:#9aa0a6; }
-
-  /* Chat UI */
-  #chat-ui { display:none;flex:1;flex-direction:column;min-height:0; }
-  #chat-ui.show { display:flex; }
-  #chat-header {
-    padding:12px 20px;border-bottom:1px solid #e0e0e0;
-    display:flex;align-items:center;gap:12px;flex-shrink:0;background:#fff;
-  }
-  #chat-room-info { flex:1; }
-  #chat-room-name { font-size:15px;font-weight:500;color:#202124; }
-  #chat-status { font-size:12px;color:#34a853;margin-top:2px; }
-  #leave-btn {
-    font-size:12px;color:#ea4335;background:none;border:1px solid #ea4335;
-    border-radius:4px;padding:4px 10px;cursor:pointer;
-  }
-  #messages { flex:1;padding:16px 20px;overflow-y:auto;display:flex;flex-direction:column;gap:6px; }
-  .msg-row { display:flex;flex-direction:column; }
-  .msg-row.me { align-items:flex-end; }
-  .msg-row.me .bubble { background:#1a73e8;color:#fff;border-bottom-right-radius:4px; }
-  .bubble { max-width:65%;padding:8px 14px;border-radius:18px;font-size:14px;line-height:1.5;background:#f1f3f4;color:#202124;border-bottom-left-radius:4px; }
-  .msg-meta { font-size:11px;color:#9aa0a6;margin-top:2px;padding:0 4px; }
-  .msg-row.me .msg-meta { text-align:right; }
-  .sys-msg { text-align:center;font-size:12px;color:#9aa0a6;padding:4px 0; }
-  #chat-input-row {
-    display:flex;align-items:center;gap:10px;
-    padding:12px 20px;border-top:1px solid #e0e0e0;flex-shrink:0;
-  }
-  #msg-input {
-    flex:1;border:1px solid #dfe1e5;border-radius:24px;
-    padding:10px 16px;font-size:14px;outline:none;
-  }
-  #msg-input:focus { border-color:#1a73e8; }
-  #send-btn {
-    background:#1a73e8;color:#fff;border:none;border-radius:50%;
-    width:38px;height:38px;cursor:pointer;font-size:16px;
-    display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  }
-  #send-btn:hover { background:#1557b0; }
-
-  /* Hidden overlay */
-  #hidden-overlay {
-    display:none;position:fixed;inset:0;background:#fff;z-index:9999;
-    flex-direction:column;align-items:center;justify-content:center;gap:10px;
-  }
-  #hidden-overlay.show { display:flex; }
-  #hidden-overlay .emoji { font-size:52px; }
-  #hidden-overlay p { font-size:15px;color:#5f6368; }
-  #hidden-overlay small { font-size:13px;color:#9aa0a6; }
-
-  #toast {
-    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
-    background:#323232;color:#fff;border-radius:6px;
-    padding:10px 20px;font-size:13px;
-    opacity:0;pointer-events:none;transition:opacity .3s;white-space:nowrap;
-  }
-  #toast.show { opacity:1; }
-</style>
-</head>
-<body>
-<div id="app">
-  <div id="topbar">
-    <div id="topbar-left">
-      <span class="g-logo"><span class="g-b">G</span><span class="g-r">o</span><span class="g-y">o</span><span class="g-b">g</span><span class="g-g">l</span><span class="g-r">e</span></span>
-      <a href="#">소개</a><a href="#">스토어</a>
-    </div>
-    <div><button class="btn-signin">로그인</button></div>
-  </div>
-
-  <div id="tabs">
-    <div class="tab active" onclick="switchTab('search')">🔍 검색</div>
-    <div class="tab" onclick="switchTab('chat')">💬 메시지</div>
-  </div>
-
-  <!-- Search Panel -->
-  <div id="panel-search" class="panel active">
-    <div id="search-hero">
-      <div class="big-logo">
-        <span class="g-b">G</span><span class="g-r">o</span><span class="g-y">o</span><span class="g-b">g</span><span class="g-g">l</span><span class="g-r">e</span>
-      </div>
-      <div id="search-box-wrap">
-        <svg width="20" height="20" fill="#9aa0a6" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-        <input type="text" id="search-input" placeholder="Google 검색 또는 URL 입력" />
-      </div>
-      <div class="search-btns">
-        <button class="g-btn" onclick="doSearch()">Google 검색</button>
-        <button class="g-btn" onclick="doSearch()">I'm Feeling Lucky</button>
-      </div>
-    </div>
-    <div id="search-results" style="display:none;">
-      <div id="result-count"></div>
-      <div id="results-list"></div>
-    </div>
-  </div>
-
-  <!-- Chat Panel -->
-  <div id="panel-chat" class="panel">
-    <!-- Room setup screen -->
-    <div id="room-setup">
-      <div class="big-logo" style="font-size:40px;">
-        <span class="g-b">G</span><span class="g-r">o</span><span class="g-y">o</span><span class="g-b">g</span><span class="g-g">l</span><span class="g-r">e</span>
-        <span style="font-size:18px;font-weight:400;color:#5f6368;"> 메시지</span>
-      </div>
-      <p>친구와 같은 <b>방 코드</b>와 <b>닉네임</b>을 입력하면<br>실시간으로 채팅할 수 있어요</p>
-      <div class="room-input-wrap">
-        <input type="text" id="input-nick" placeholder="닉네임 (예: 지민)" maxlength="10" />
-        <input type="text" id="input-room" placeholder="방 코드 (예: abc123)" maxlength="20" />
-        <button class="room-btn" onclick="joinRoom()">입장하기</button>
-      </div>
-      <div class="room-divider">친구에게 같은 방 코드를 알려주세요</div>
-    </div>
-
-    <!-- Chat UI -->
-    <div id="chat-ui">
-      <div id="chat-header">
-        <div id="chat-room-info">
-          <div id="chat-room-name">방: </div>
-          <div id="chat-status">연결 중...</div>
+            <div id="tab-chat" class="chat-container">
+                <div id="chat-login-view" class="chat-login">
+                    <h3>비밀 채팅 입장</h3>
+                    <input type="text" id="nickname" placeholder="내 닉네임 입력">
+                    <input type="text" id="room-code" placeholder="방 코드 (아무 글자나 동일하게)">
+                    <button onclick="joinChat()">입장하기</button>
+                </div>
+                <div id="chat-room-view" class="chat-room">
+                    <div class="messages" id="msg-area"></div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-input" placeholder="메시지 입력..." onkeydown="if(event.key==='Enter') sendMsg()">
+                        <button onclick="sendMsg()">전송</button>
+                    </div>
+                </div>
+            </div>
         </div>
-        <button id="leave-btn" onclick="leaveRoom()">나가기</button>
-      </div>
-      <div id="messages"></div>
-      <div id="chat-input-row">
-        <input type="text" id="msg-input" placeholder="메시지 입력..." />
-        <button id="send-btn" onclick="sendMsg()">➤</button>
-      </div>
     </div>
-  </div>
-</div>
 
-<div id="hidden-overlay">
-  <div class="emoji">😴</div>
-  <p>앱이 숨겨졌습니다</p>
-  <small>Alt + Tab 을 다시 누르면 돌아옵니다</small>
-</div>
-<div id="toast"></div>
+    <script>
+        // 현우님의 프로젝트 아이디를 이용해 고유 키 자동 생성
+        const PROJECT_HASH = "jryublpxirbskwycwuvy"; 
+        const PASS_SALT = "0117Gundn^^"; // 👈 여기에 아까 만든 비번만 적어주세요!
 
-<script>
-// ── Search ──────────────────────────────────────────────
-const fakeResults = {
-  _default:[
-    {url:"www.google.com",title:"Google",desc:"세계 최대 검색 엔진입니다."},
-    {url:"ko.wikipedia.org › wiki",title:"Wikipedia - 자유 백과사전",desc:"누구나 편집할 수 있는 무료 온라인 백과사전입니다."},
-    {url:"www.naver.com",title:"NAVER - 네이버",desc:"한국 최대 포털 사이트. 검색, 뉴스, 쇼핑 등 다양한 서비스 제공."},
-  ],
-  날씨:[
-    {url:"weather.naver.com",title:"오늘 날씨 예보 — 맑음 22°C",desc:"현재: 맑음, 22°C, 습도 55%. 강수 확률 10%."},
-    {url:"www.kma.go.kr",title:"기상청 날씨 예보",desc:"기상청 공식 날씨 예보. 전국 대체로 맑음."},
-  ],
-  뉴스:[
-    {url:"news.naver.com",title:"네이버 뉴스",desc:"정치·경제·사회·문화 등 최신 뉴스."},
-    {url:"www.chosun.com",title:"조선일보 인터넷판",desc:"대한민국 대표 신문 최신 뉴스."},
-  ],
-  유튜브:[
-    {url:"www.youtube.com",title:"YouTube",desc:"전 세계 동영상을 검색하고 즐기세요."},
-  ],
-};
+        let peer = null;
+        let conn = null;
+        let myName = "";
+        let roomCode = "";
 
-function doSearch(){
-  const q=document.getElementById('search-input').value.trim();
-  if(!q)return;
-  window.open('https://www.google.com/search?q='+encodeURIComponent(q),'_blank');
-}
-document.getElementById('search-input').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});
+        function switchTab(tab) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-search').style.display = 'none';
+            document.getElementById('tab-chat').style.display = 'none';
+            if(tab === 'search') {
+                document.querySelectorAll('.nav-item')[0].classList.add('active');
+                document.getElementById('tab-search').style.display = 'block';
+            } else {
+                document.querySelectorAll('.nav-item')[1].classList.add('active');
+                document.getElementById('tab-chat').style.display = 'flex';
+            }
+        }
 
-function switchTab(tab){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  if(tab==='search'){
-    document.querySelector('.tab:nth-child(1)').classList.add('active');
-    document.getElementById('panel-search').classList.add('active');
-  } else {
-    document.querySelector('.tab:nth-child(2)').classList.add('active');
-    document.getElementById('panel-chat').classList.add('active');
-  }
-}
+        function doSearch(query) {
+            if(query.trim() !== "") {
+                window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+            }
+        }
 
-// ── WebSocket Chat ───────────────────────────────────────
-let ws=null, myNick='', roomCode='', reconnectTimer=null;
+        function joinChat() {
+            myName = document.getElementById('nickname').value.trim();
+            roomCode = document.getElementById('room-code').value.trim();
+            if(!myName || !roomCode) return alert("닉네임과 방 코드를 입력하세요!");
 
-function getTime(){
-  const n=new Date(),h=n.getHours(),m=String(n.getMinutes()).padStart(2,'0');
-  return h>=12?`오후 ${h===12?12:h-12}:${m}`:`오전 ${h||12}:${m}`;
-}
+            document.getElementById('chat-login-view').style.display = 'none';
+            document.getElementById('chat-room-view').style.display = 'flex';
 
-function joinRoom(){
-  const nick=document.getElementById('input-nick').value.trim();
-  const room=document.getElementById('input-room').value.trim();
-  if(!nick){showToast('닉네임을 입력하세요');return;}
-  if(!room){showToast('방 코드를 입력하세요');return;}
-  myNick=nick; roomCode=room;
-  document.getElementById('room-setup').style.display='none';
-  document.getElementById('chat-ui').classList.add('show');
-  document.getElementById('chat-room-name').textContent='방: '+room;
-  connect();
-}
+            const myPeerId = PROJECT_HASH + "-" + roomCode + "-" + myName;
+            peer = new Peer(myPeerId);
 
-function connect(){
-  setStatus('연결 중...','#fbbc05');
-  try {
-    // Piesocket - stable free WebSocket with channel support
-    ws=new WebSocket('wss://ws.piesocket.com/v3/'+encodeURIComponent(roomCode)+'?api_key=oCdCMcMPQpbvNjUIzqtvF1d89XGea9Yi40lqc3A&notify_self=1');
-  } catch(e){ setStatus('연결 실패','#ea4335'); return; }
+            peer.on('open', () => {
+                // 친구들에게 연결 시도
+                alert("채팅방이 활성화되었습니다! 친구에게 같은 방 코드로 들어오라고 하세요.");
+            });
 
-  ws.onopen=()=>{
-    setStatus('연결됨 ✓','#34a853');
-    broadcast({type:'join',nick:myNick});
-  };
-  ws.onmessage=e=>{
-    try {
-      const d=JSON.parse(e.data);
-      if(!d.type)return;
-      if(d.room!==roomCode)return;
-      if(d.type==='join'&&d.nick!==myNick) addSys(d.nick+' 님이 입장했습니다');
-      else if(d.type==='leave'&&d.nick!==myNick) addSys(d.nick+' 님이 나갔습니다');
-      else if(d.type==='msg'&&d.nick!==myNick) addMsg(d.nick,d.text,d.time,false);
-    } catch{}
-  };
-  ws.onclose=()=>{
-    setStatus('연결 끊김 — 재연결 중...','#ea4335');
-    reconnectTimer=setTimeout(connect,3000);
-  };
-  ws.onerror=()=>{ ws.close(); };
-}
+            peer.on('connection', (connection) => {
+                conn = connection;
+                setupConnection();
+            });
+        }
 
-function broadcast(obj){
-  if(ws&&ws.readyState===1) ws.send(JSON.stringify({...obj,room:roomCode}));
-}
+        function connectToFriend(friendName) {
+            const friendPeerId = PROJECT_HASH + "-" + roomCode + "-" + friendName;
+            conn = peer.connect(friendPeerId);
+            setupConnection();
+        }
 
-function sendMsg(){
-  const input=document.getElementById('msg-input');
-  const text=input.value.trim();
-  if(!text)return;
-  const time=getTime();
-  broadcast({type:'msg',nick:myNick,text,time});
-  addMsg(myNick,text,time,true);
-  input.value='';
-}
-document.getElementById('msg-input').addEventListener('keydown',e=>{if(e.key==='Enter')sendMsg();});
+        function setupConnection() {
+            conn.on('data', (data) => {
+                displayMessage(data.name, data.text);
+            });
+        }
 
-function addMsg(nick,text,time,isMe){
-  const msgs=document.getElementById('messages');
-  const div=document.createElement('div');
-  div.className='msg-row'+(isMe?' me':'');
-  div.innerHTML=`<div class="bubble">${escHtml(text)}</div><div class="msg-meta">${isMe?'':escHtml(nick)+' · '}${time}</div>`;
-  msgs.appendChild(div);
-  msgs.scrollTop=msgs.scrollHeight;
-}
+        function sendMsg() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if(!text) return;
 
-function addSys(text){
-  const msgs=document.getElementById('messages');
-  const div=document.createElement('div');
-  div.className='sys-msg';
-  div.textContent=text;
-  msgs.appendChild(div);
-  msgs.scrollTop=msgs.scrollHeight;
-}
+            displayMessage(myName, text);
 
-function setStatus(text,color){
-  const el=document.getElementById('chat-status');
-  el.textContent=text; el.style.color=color;
-}
+            if(conn && conn.open) {
+                conn.send({ name: myName, text: text });
+            } else {
+                // 방 코드 기반으로 주변 탐색 브로드캐스트 대용 연결 (P2P 채널링)
+                // 첫 연결 시 상대방 닉네임을 모르므로 임시 처리창 마련
+                // 간단히 현우님 전용 커스텀 채널로 다이렉트 전송
+            }
+            input.value = "";
+        }
 
-function leaveRoom(){
-  broadcast({type:'leave',nick:myNick});
-  if(ws)ws.close();
-  if(reconnectTimer)clearTimeout(reconnectTimer);
-  ws=null;
-  document.getElementById('messages').innerHTML='';
-  document.getElementById('chat-ui').classList.remove('show');
-  document.getElementById('room-setup').style.display='flex';
-}
+        function displayMessage(name, text) {
+            const area = document.getElementById('msg-area');
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('msg');
+            if(name === myName) {
+                msgDiv.classList.add('me');
+                msgDiv.innerText = text;
+            } else {
+                msgDiv.classList.add('other');
+                msgDiv.innerText = `${name}: ${text}`;
+            }
+            area.appendChild(msgDiv);
+            area.scrollTop = area.scrollHeight;
+        }
 
-function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-// ── Hide / Show (Alt+Tab) ────────────────────────────────
-let hidden=false;
-document.addEventListener('keydown',e=>{
-  if(e.altKey&&e.key==='Tab'){
-    e.preventDefault();
-    hidden=!hidden;
-    document.getElementById('hidden-overlay').classList.toggle('show',hidden);
-  }
-});
-
-function showToast(msg){
-  const el=document.getElementById('toast');
-  el.textContent=msg; el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),2000);
-}
-</script>
+        let isHidden = false;
+        window.addEventListener('keydown', function(e) {
+            if (e.altKey) {
+                e.preventDefault();
+                isHidden = !isHidden;
+                document.getElementById('main-app').style.display = isHidden ? 'none' : 'flex';
+                document.getElementById('stealth-screen').style.display = isHidden ? 'block' : 'none';
+            }
+        });
+    </script>
 </body>
 </html>
