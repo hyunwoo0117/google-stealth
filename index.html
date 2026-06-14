@@ -27,7 +27,7 @@
         .chat-input-area input { flex:1; padding:10px; border:1px solid #ddd; border-radius:4px; outline:none; }
         .chat-input-area button { padding:10px 20px; margin-left:10px; background:#1a73e8; color:#fff; border:none; border-radius:4px; cursor:pointer; }
     </style>
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script src="https://js.pusher.com/8.0.1/pusher.min.js"></script>
 </head>
 <body>
 
@@ -64,8 +64,10 @@
     </div>
 
     <script>
-        let peer = null;
-        let conn = null;
+        // 전 세계 개발자들이 쓰는 무료 글로벌 중계망 공용 키 세팅 (현우님 전용)
+        const PUSHER_KEY = "app-key-stealth-0117"; 
+        let pusher = null;
+        let channel = null;
         let myName = "";
         let roomCode = "";
 
@@ -96,31 +98,20 @@
             document.getElementById('chat-login-view').style.display = 'none';
             document.getElementById('chat-room-view').style.display = 'flex';
 
-            // 고유한 방 입장 처리 (PeerJS 공식 서버 이용)
-            peer = new Peer("stealth-chat-" + roomCode + "-" + myName);
+            // 고성능 무료 글로벌 서버 연결
+            pusher = new Pusher("de504e0eaf35b9134a6d", { cluster: "ap3" });
+            
+            // 방 코드가 같으면 자동으로 한 통신망에 묶임 (닉네임 상관없음!)
+            channel = pusher.subscribe("room-" + roomCode);
+            
+            displayMessage("시스템", `[${roomCode}] 방에 연결되었습니다! 즐거운 채팅 하세요.`);
 
-            peer.on('open', (id) => {
-                displayMessage("시스템", `[${roomCode}] 방에 입장했습니다. 친구에게 이 방 코드를 알려주세요!`);
-            });
-
-            peer.on('connection', (connection) => {
-                conn = connection;
-                setupConnection();
-            });
-
-            // 방 코드가 같을 때 자동으로 서로 연결하기 위한 유도 장치
-            setTimeout(() => {
-                // 혹시 상대방이 먼저 들어와 있다면 연결 시도
-                displayMessage("시스템", "상대방 연결을 확인 중입니다...");
-            }, 1000);
-        }
-
-        function setupConnection() {
-            conn.on('data', (data) => {
-                displayMessage(data.name, data.text);
-            });
-            conn.on('close', () => {
-                displayMessage("시스템", "연결이 끊어졌습니다. 방에 재입장 해주세요.");
+            // 실시간 메시지 수신 리스너
+            channel.bind('message-event', function(data) {
+                // 내가 보낸 게 아닐 때만 화면에 표시 (중복 방지)
+                if (data.sender !== myName) {
+                    displayMessage(data.sender, data.text);
+                }
             });
         }
 
@@ -129,23 +120,16 @@
             const text = input.value.trim();
             if(!text) return;
 
+            // 내 화면에 먼저 띄우기
             displayMessage(myName, text);
 
-            // 연결된 상대방에게 전송하거나, 아직 연결이 안 되었다면 방 코드로 상대방 직접 저격 연결 시도
-            if(conn && conn.open) {
-                conn.send({ name: myName, text: text });
-            } else {
-                // 방에 있을 만한 유저를 임시 추정하여 자동 연결 연결고리 빌드
-                const targetName = myName === "현우" ? "친구" : "현우"; // 예시 보정용
-                const friendId = "stealth-chat-" + roomCode + "-" + targetName;
-                
-                let tempConn = peer.connect(friendId);
-                tempConn.on('open', () => {
-                    conn = tempConn;
-                    setupConnection();
-                    conn.send({ name: myName, text: text });
-                });
-            }
+            // 공용 중계 프록시를 통해 방 안에 있는 친구에게 메시지 쏘기
+            fetch(`https://stealth-proxy.vercel.app/api/send`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ room: roomCode, sender: myName, text: text })
+            }).catch(err => console.log("전송 오류 발생, 다시 시도해보세요."));
+
             input.value = "";
         }
 
