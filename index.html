@@ -27,7 +27,6 @@
         .chat-input-area input { flex:1; padding:10px; border:1px solid #ddd; border-radius:4px; outline:none; }
         .chat-input-area button { padding:10px 20px; margin-left:10px; background:#1a73e8; color:#fff; border:none; border-radius:4px; cursor:pointer; }
     </style>
-    <script src="https://js.pusher.com/8.0.1/pusher.min.js"></script>
 </head>
 <body>
 
@@ -64,12 +63,12 @@
     </div>
 
     <script>
-        // 전 세계 공용 무료 샌드박스 망 이용
-        const APP_KEY = "de504e0eaf35b9134a6d";
-        let pusher = null;
-        let channel = null;
+        // 현우님의 고유 Supabase 주소 다이렉트 연동
+        const SUB_URL = "https://jryublpxirbskwycwuvy.supabase.co/rest/v1/messages";
         let myName = "";
         let roomCode = "";
+        let lastId = 0;
+        let pollTimer = null;
 
         function switchTab(tab) {
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -98,18 +97,32 @@
             document.getElementById('chat-login-view').style.display = 'none';
             document.getElementById('chat-room-view').style.display = 'flex';
 
-            // 암호화 소켓 다이렉트 통신망 활성화
-            pusher = new Pusher(APP_KEY, { cluster: "ap3", forceTLS: true });
-            channel = pusher.subscribe("room-" + roomCode);
-            
-            displayMessage("시스템", `[${roomCode}] 방에 보안 연결되었습니다! 메세지를 보내보세요.`);
+            displayMessage("시스템", `[${roomCode}] 방에 입장했습니다!`);
 
-            // 실시간 메시지 캐치
-            channel.bind('message-event', function(data) {
-                if (data.sender !== myName) {
-                    displayMessage(data.sender, data.text);
+            // 데이터베이스에서 실시간으로 메시지 긁어오기 시작 (1.5초 간격으로 무한 체크)
+            fetchMessages();
+            pollTimer = setInterval(fetchMessages, 1500);
+        }
+
+        function fetchMessages() {
+            // 방 코드가 일치하는 메시지만 가져오기
+            fetch(`${SUB_URL}?room=eq.${encodeURIComponent(roomCode)}&id=gt.${lastId}&order=id.asc`, {
+                method: "GET",
+                headers: {
+                    "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyeXVibHB4aXJic2t3eWN3dXZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTgzNjM3NDcsImV4cCI6MjAzMzkzOTc0N30.0"
                 }
-            });
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(Array.isArray(data)) {
+                    data.forEach(msg => {
+                        if (msg.id > lastId) lastId = msg.id;
+                        if (msg.sender !== myName) {
+                            displayMessage(msg.sender, msg.text);
+                        }
+                    });
+                }
+            }).catch(err => console.log("불러오기 대기 중..."));
         }
 
         function sendMsg() {
@@ -117,12 +130,25 @@
             const text = input.value.trim();
             if(!text) return;
 
-            // 내 화면 표시
             displayMessage(myName, text);
 
-            // 브라우저 차단 우회용 글로벌 오픈 프록시 다이렉트 터널링 생성
-            fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://stealth-proxy.vercel.app/api/send?room=${roomCode}&sender=${encodeURIComponent(myName)}&text=${encodeURIComponent(text)}`)}`)
-            .catch(err => console.log("우회 전송 시도"));
+            // 내 Supabase DB 테이블에 바로 데이터 꽂아넣기
+            fetch(SUB_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyeXVibHB4aXJic2t3eWN3dXZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTgzNjM3NDcsImV4cCI6MjAzMzkzOTc0N30.0",
+                    "Prefer": "return=representation"
+                },
+                body: JSON.stringify({ room: roomCode, sender: myName, text: text })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data && data[0]) {
+                    if(data[0].id > lastId) lastId = data[0].id;
+                }
+            })
+            .catch(err => alert("전송에 실패했습니다. 방에 다시 입장해보세요!"));
 
             input.value = "";
         }
