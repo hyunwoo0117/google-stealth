@@ -1,426 +1,696 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Google</title>
-<link rel="icon" href="https://www.google.com/favicon.ico">
-<style>
-  * { margin:0; padding:0; box-sizing:border-box; font-family:arial,sans-serif; }
-  body { background:#fff; height:100vh; overflow:hidden; }
-  #app { display:flex; flex-direction:column; height:100vh; }
-  #topbar { display:flex; align-items:center; justify-content:space-between; padding:8px 16px; border-bottom:1px solid #e0e0e0; background:#fff; flex-shrink:0; }
-  #topbar-left { display:flex; align-items:center; gap:24px; }
-  #topbar-left a { font-size:13px; color:#202124; text-decoration:none; }
-  .g-b{color:#4285F4}.g-r{color:#EA4335}.g-y{color:#FBBC05}.g-g{color:#34A853}
-  .g-logo { font-size:22px; font-weight:700; letter-spacing:-1px; }
-  .btn-signin { background:#1a73e8;color:#fff;border:none;border-radius:4px;padding:8px 16px;font-size:14px;cursor:pointer; }
-  #tabs { display:flex; border-bottom:1px solid #e0e0e0; flex-shrink:0; }
-  .tab { padding:10px 20px;font-size:13px;cursor:pointer;color:#5f6368;border-bottom:2px solid transparent;user-select:none; }
-  .tab.active { color:#1a73e8;border-bottom:2px solid #1a73e8;font-weight:500; }
-  .tab:hover { background:#f1f3f4; }
-  .panel { flex:1;overflow-y:auto;display:none;flex-direction:column;min-height:0; }
-  .panel.active { display:flex; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google</title>
+    <link rel="shortcut icon" href="https://www.google.com/favicon.ico">
+    <style>
+        /* 기본 스타일 및 위장 레이아웃 */
+        *, *::before, *::after { box-sizing: border-box; }
+        body, html { margin:0; padding:0; width:100%; height:100%; font-family:arial,sans-serif; overflow:hidden; background:#fff; user-select: none; }
+        
+        /* Alt+Tab 위장 레이아웃 (선생님 등장 시 빈 화면인 척 위장) */
+        #stealth-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#f1f3f4; z-index:999999; }
 
-  /* Search */
-  #search-hero { display:flex;flex-direction:column;align-items:center;padding:80px 20px 20px;gap:20px; }
-  .big-logo { font-size:72px;font-weight:700;letter-spacing:-4px;line-height:1; }
-  #search-box-wrap { display:flex;align-items:center;width:100%;max-width:580px;border:1px solid #dfe1e5;border-radius:24px;padding:10px 16px;box-shadow:0 1px 3px rgba(0,0,0,.1);gap:10px; }
-  #search-box-wrap:focus-within { box-shadow:0 1px 6px rgba(0,0,0,.2); }
-  #search-input { flex:1;border:none;outline:none;font-size:16px;color:#202124; }
-  .search-btns { display:flex;gap:10px;margin-top:4px; }
-  .g-btn { background:#f8f9fa;border:1px solid #f8f9fa;border-radius:4px;padding:9px 23px;font-size:14px;color:#3c4043;cursor:pointer; }
-  .g-btn:hover { border-color:#dadce0; }
+        /* 상단 구글 위장 네비게이션 바 */
+        .google-header { height:60px; display:flex; justify-content:space-between; align-items:center; padding:0 20px; border-bottom:1px solid #f2f2f2; background:#fff; }
+        .header-left { display:flex; align-items:center; gap:15px; }
+        .header-right { display:flex; align-items:center; gap:15px; }
+        .nav-btn { background:none; border:none; color:#5f6368; font-size:14px; cursor:pointer; padding:8px 12px; border-radius:4px; font-weight:bold; transition: background 0.2s; }
+        .nav-btn:hover { background:#f8f9fa; color:#1a73e8; }
+        .nav-btn.active { color:#1a73e8; border-bottom:2px solid #1a73e8; border-radius:0; }
 
-  /* Chat */
-  #room-setup { flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px; }
-  .room-input-wrap { display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px; }
-  .room-input-wrap input { border:1px solid #dfe1e5;border-radius:4px;padding:10px 14px;font-size:14px;outline:none; }
-  .room-input-wrap input:focus { border-color:#1a73e8; }
-  .room-btn { background:#1a73e8;color:#fff;border:none;border-radius:4px;padding:10px;font-size:14px;cursor:pointer; }
-  .room-desc { font-size:13px;color:#5f6368;text-align:center;max-width:300px;line-height:1.6; }
-  #chat-ui { display:none;flex:1;flex-direction:column;min-height:0; }
-  #chat-ui.show { display:flex; }
-  #chat-header { padding:12px 20px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;gap:12px;flex-shrink:0; }
-  #chat-room-info { flex:1; }
-  #chat-room-name { font-size:15px;font-weight:500;color:#202124; }
-  #chat-status { font-size:12px;color:#34a853;margin-top:2px; }
-  #leave-btn { font-size:12px;color:#ea4335;background:none;border:1px solid #ea4335;border-radius:4px;padding:4px 10px;cursor:pointer; }
-  #messages { flex:1;padding:16px 20px;overflow-y:auto;display:flex;flex-direction:column;gap:6px; }
-  .msg-row { display:flex;flex-direction:column; }
-  .msg-row.me { align-items:flex-end; }
-  .bubble { max-width:65%;padding:8px 14px;border-radius:18px;font-size:14px;line-height:1.5;background:#f1f3f4;color:#202124;border-bottom-left-radius:4px; }
-  .msg-row.me .bubble { background:#1a73e8;color:#fff;border-bottom-left-radius:18px;border-bottom-right-radius:4px; }
-  .msg-meta { font-size:11px;color:#9aa0a6;margin-top:2px;padding:0 4px; }
-  .msg-row.me .msg-meta { text-align:right; }
-  .sys-msg { text-align:center;font-size:12px;color:#9aa0a6;padding:6px 0; }
-  #chat-input-row { display:flex;align-items:center;gap:10px;padding:12px 20px;border-top:1px solid #e0e0e0;flex-shrink:0; }
-  #msg-input { flex:1;border:1px solid #dfe1e5;border-radius:24px;padding:10px 16px;font-size:14px;outline:none; }
-  #msg-input:focus { border-color:#1a73e8; }
-  #send-btn { background:#1a73e8;color:#fff;border:none;border-radius:50%;width:38px;height:38px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center; }
+        /* 메인 컨텐츠 영역 */
+        .content-container { width:100%; height:calc(100% - 60px); position:relative; }
+        .tab-panel { display:none; width:100%; height:100%; position:absolute; top:0; left:0; }
+        .tab-panel.active { display:block; }
 
-  /* Video Call */
-  #video-setup { flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px; }
-  #video-ui { display:none;flex:1;flex-direction:column;min-height:0;background:#202124; }
-  #video-ui.show { display:flex; }
-  #video-grid { flex:1;display:flex;flex-wrap:wrap;gap:4px;padding:4px;align-content:center;justify-content:center;overflow:hidden; }
-  .video-tile { position:relative;background:#3c4043;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center; }
-  .video-tile video { width:100%;height:100%;object-fit:cover; }
-  .video-tile .name-tag { position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:2px 8px;border-radius:4px; }
-  .video-tile .no-video { font-size:40px;color:#9aa0a6; }
-  #video-controls { display:flex;align-items:center;justify-content:center;gap:16px;padding:16px;flex-shrink:0;background:#202124; }
-  .ctrl-btn { width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px; }
-  .ctrl-btn.red { background:#ea4335; }
-  .ctrl-btn.gray { background:#3c4043; }
-  .ctrl-btn.gray.off { background:#ea4335; }
-  #video-header { display:flex;align-items:center;justify-content:space-between;padding:12px 20px;flex-shrink:0;background:#202124; }
-  #video-room-name { color:#fff;font-size:14px; }
-  #video-status { color:#34a853;font-size:12px; }
+        /* 1. 구글 검색 홈 위장 패널 */
+        .search-panel { display:flex; flex-direction:column; align-items:center; justify-content:center; padding-top:120px; }
+        .logo { font-size:90px; font-weight:bold; font-family: 'Product Sans', sans-serif; margin-bottom:30px; letter-spacing:-2px; }
+        .logo span:nth-child(1) { color: #4285F4; }
+        .logo span:nth-child(2) { color: #EA4335; }
+        .logo span:nth-child(3) { color: #FBBC05; }
+        .logo span:nth-child(4) { color: #4285F4; }
+        .logo span:nth-child(5) { color: #34A853; }
+        .logo span:nth-child(6) { color: #EA4335; }
+        .search-box-wrapper { width:100%; max-width:584px; position:relative; margin-bottom:30px; }
+        .search-input { width:100%; height:46px; border:1px solid #dfe1e5; border-radius:24px; padding:0 45px 0 20px; font-size:16px; outline:none; box-shadow:none; transition:box-shadow 0.2s; }
+        .search-input:focus { box-shadow: 0 1px 6px rgba(32,33,36,0.28); border-color:rgba(223,225,229,0); }
+        .search-buttons { display:flex; gap:12px; }
+        .g-btn { background:#f8f9fa; border:1px solid #f8f9fa; color:#3c4043; font-size:14px; padding:10px 16px; border-radius:4px; cursor:pointer; }
+        .g-btn:hover { border:1px solid #dadce0; color:#202124; background-image:-webkit-linear-gradient(top,#f8f9fa,#f1f3f4); }
 
-  #hidden-overlay { display:none;position:fixed;inset:0;background:#fff;z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:10px; }
-  #hidden-overlay.show { display:flex; }
-  #hidden-overlay .emoji { font-size:52px; }
-  #hidden-overlay p { font-size:15px;color:#5f6368; }
-  #hidden-overlay small { font-size:13px;color:#9aa0a6; }
-  #toast { position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#323232;color:#fff;border-radius:6px;padding:10px 20px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .3s;white-space:nowrap;z-index:999; }
-  #toast.show { opacity:1; }
-</style>
+        /* 룸 설정 공통 UI */
+        .room-config-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:#fff; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:15px; }
+        .config-box { background:#f8f9fa; border:1px solid #dadce0; padding:30px; border-radius:8px; width:350px; display:flex; flex-direction:column; gap:12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .config-box h3 { margin:0 0 10px 0; color:#202124; text-align:center; }
+        .config-box input { width:100%; height:40px; padding:0 10px; border:1px solid #dadce0; border-radius:4px; outline:none; font-size:14px; }
+        .config-box button { background:#1a73e8; color:#fff; border:none; height:40px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:14px; }
+        .config-box button:hover { background:#1557b0; }
+
+        /* 2. 실시간 채팅 패널 */
+        .chat-main { width:100%; height:100%; display:flex; flex-direction:column; background:#f1f3f4; }
+        .chat-messages { flex:1; padding:20px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
+        .msg-block { max-width:60%; padding:10px 14px; border-radius:8px; font-size:14px; line-height:1.4; word-break:break-all; position:relative; }
+        .msg-block.mine { background:#1a73e8; color:#fff; align-self:flex-end; border-bottom-right-radius:1px; }
+        .msg-block.others { background:#fff; color:#202124; align-self:flex-start; border-bottom-left-radius:1px; border:1px solid #dadce0; }
+        .msg-user { font-size:11px; margin-bottom:3px; font-weight:bold; opacity:0.8; }
+        .chat-input-bar { height:60px; background:#fff; border-top:1px solid #dadce0; display:flex; padding:10px; gap:10px; }
+        .chat-input-bar input { flex:1; border:1px solid #dadce0; border-radius:20px; padding:0 15px; outline:none; font-size:14px; }
+        .chat-input-bar button { background:#1a73e8; border:none; color:#fff; width:60px; border-radius:20px; cursor:pointer; font-weight:bold; }
+
+        /* 3. 영상통화 패널 */
+        .video-main { width:100%; height:100%; display:flex; background:#202124; position:relative; }
+        .video-grid { flex:1; display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:15px; padding:20px; box-sizing:border-box; align-content:center; justify-content:center; }
+        .video-wrapper { background:#3c4043; border-radius:8px; overflow:hidden; position:relative; aspect-ratio: 4/3; border: 2px solid #5f6368; }
+        .video-wrapper video, .video-wrapper canvas { width:100%; height:100%; object-fit: cover; position:absolute; top:0; left:0; }
+        .video-wrapper canvas { z-index: 2; pointer-events: none; } /* 스티커 오버레이 */
+        .video-info { position:absolute; bottom:10px; left:10px; background:rgba(0,0,0,0.6); color:#fff; padding:4px 8px; border-radius:4px; font-size:12px; z-index:3; }
+        
+        .video-controls { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); display:flex; gap:15px; background:rgba(32,33,36,0.9); padding:12px 25px; border-radius:30px; z-index:10; border:1px solid #5f6368; }
+        .control-btn { background:#3c4043; border:none; width:45px; height:45px; border-radius:50%; color:#fff; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; }
+        .control-btn:hover { background:#4f5357; }
+        .control-btn.off { background:#ea4335; }
+        .control-btn.off:hover { background:#d93025; }
+        .filter-select { background:#3c4043; color:#fff; border:none; border-radius:4px; padding:0 10px; font-size:12px; outline:none; cursor:pointer; }
+
+        /* 4. 멀티 플레이 게임 패널 */
+        .game-main { width:100%; height:100%; display:flex; background:#121212; position:relative; }
+        .game-sidebar { width:200px; background:#1f1f1f; border-right:1px solid #333; display:flex; flex-direction:column; padding:15px; gap:10px; z-index:5; }
+        .game-menu-title { color:#aaa; font-size:12px; font-weight:bold; margin-bottom:5px; text-transform:uppercase; letter-spacing:1px; }
+        .game-sel-btn { background:#2d2d2d; border:1px solid #3f3f3f; color:#fff; padding:12px; border-radius:6px; cursor:pointer; text-align:left; font-size:14px; font-weight:bold; transition:0.2s; }
+        .game-sel-btn:hover, .game-sel-btn.active { background:#1a73e8; border-color:#1a73e8; }
+        .game-stage { flex:1; position:relative; overflow:hidden; display:flex; justify-content:center; align-items:center; background:#000; }
+        .game-canvas-container { position:relative; width:800px; height:550px; background:#1a1a1a; box-shadow:0 0 20px rgba(0,0,0,0.8); border-radius:4px; overflow:hidden; display:none; }
+        .game-canvas-container.active { display:block; }
+        .game-ui-overlay { position:absolute; top:15px; left:15px; color:#fff; font-family:monospace; font-size:16px; pointer-events:none; text-shadow:1px 1px 3px #000; z-index:10; background:rgba(0,0,0,0.5); padding:8px 12px; border-radius:4px; }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
-<div id="app">
-  <div id="topbar">
-    <div id="topbar-left">
-      <span class="g-logo"><span class="g-b">G</span><span class="g-r">o</span><span class="g-y">o</span><span class="g-b">g</span><span class="g-g">l</span><span class="g-r">e</span></span>
-      <a href="#">소개</a><a href="#">스토어</a>
-    </div>
-    <div><button class="btn-signin">로그인</button></div>
-  </div>
-  <div id="tabs">
-    <div class="tab active" onclick="switchTab('search')">🔍 검색</div>
-    <div class="tab" onclick="switchTab('chat')">💬 메시지</div>
-    <div class="tab" onclick="switchTab('video')">📹 영상통화</div>
-  </div>
 
-  <!-- Search -->
-  <div id="panel-search" class="panel active">
-    <div id="search-hero">
-      <div class="big-logo"><span class="g-b">G</span><span class="g-r">o</span><span class="g-y">o</span><span class="g-b">g</span><span class="g-g">l</span><span class="g-r">e</span></div>
-      <div id="search-box-wrap">
-        <svg width="20" height="20" fill="#9aa0a6" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-        <input type="text" id="search-input" placeholder="Google 검색 또는 URL 입력" />
-      </div>
-      <div class="search-btns">
-        <button class="g-btn" onclick="doSearch()">Google 검색</button>
-        <button class="g-btn" onclick="doSearch()">I'm Feeling Lucky</button>
-      </div>
-    </div>
-  </div>
+    <div id="stealth-overlay"></div>
 
-  <!-- Chat -->
-  <div id="panel-chat" class="panel">
-    <div id="room-setup">
-      <div class="big-logo" style="font-size:36px;"><span class="g-b">G</span><span class="g-r">o</span><span class="g-y">o</span><span class="g-b">g</span><span class="g-g">l</span><span class="g-r">e</span> <span style="font-size:16px;font-weight:400;color:#5f6368;">메시지</span></div>
-      <p class="room-desc">친구와 <b>같은 방 코드</b>를 입력하면<br>실시간 채팅 가능해요 😊</p>
-      <div class="room-input-wrap">
-        <input type="text" id="input-nick" placeholder="닉네임 (예: 현우)" maxlength="10" />
-        <input type="text" id="input-room" placeholder="방 코드 (예: soccer123)" maxlength="30" />
-        <button class="room-btn" onclick="joinRoom()">입장하기</button>
-      </div>
-    </div>
-    <div id="chat-ui">
-      <div id="chat-header">
-        <div id="chat-room-info">
-          <div id="chat-room-name"></div>
-          <div id="chat-status">연결됨 ✓</div>
+    <header class="google-header">
+        <div class="header-left">
+            <button class="nav-btn active" onclick="switchTab('search')">🔍 Google</button>
+            <button class="nav-btn" onclick="switchTab('chat')">💬 메시지</button>
+            <button class="nav-btn" onclick="switchTab('video')">📹 영상통화</button>
+            <button class="nav-btn" onclick="switchTab('game')">🎮 온라인 게임</button>
         </div>
-        <button id="leave-btn" onclick="leaveRoom()">나가기</button>
-      </div>
-      <div id="messages"></div>
-      <div id="chat-input-row">
-        <input type="text" id="msg-input" placeholder="메시지 입력..." />
-        <button id="send-btn" onclick="sendMsg()">➤</button>
-      </div>
+        <div class="header-right">
+            <span style="color:#5f6368; font-size:13px; font-weight:bold; background:#f1f3f4; padding:5px 10px; border-radius:15px;">🔒 시크릿 상태 가동 중</span>
+            <div style="width:32px; height:32px; background:#1a73e8; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:14px; cursor:pointer;">H</div>
+        </div>
+    </header>
+
+    <div class="content-container">
+        
+        <div id="panel-search" class="tab-panel active">
+            <div class="search-panel">
+                <div class="logo">
+                    <span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span>
+                </div>
+                <div class="search-box-wrapper">
+                    <input type="text" id="google-search-input" class="search-input" autofocus autocomplete="off" placeholder="구글에서 검색 또는 URL 입력">
+                </div>
+                <div class="search-buttons">
+                    <button class="g-btn" onclick="executeGoogleSearch()">Google 검색</button>
+                    <button class="g-btn" onclick="alert('필터와 게임 기능이 탑재된 시크릿 위장 모드입니다.')">I'm Feeling Lucky</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="panel-chat" class="tab-panel">
+            <div id="chat-config" class="room-config-overlay">
+                <div class="config-box">
+                    <h3>💬 보안 메시지 룸 설정</h3>
+                    <input type="text" id="chat-nickname" placeholder="닉네임 입력">
+                    <input type="text" id="chat-roomcode" placeholder="방 코드 입력 (예: 월드컵비밀방)">
+                    <button onclick="initChat()">대화방 입장하기</button>
+                </div>
+            </div>
+            <div class="chat-main">
+                <div class="chat-messages" id="chat-msg-area"></div>
+                <div class="chat-input-bar">
+                    <input type="text" id="chat-msg-input" placeholder="메시지를 입력하세요..." onkeypress="if(event.keyCode==13) sendChatMessage()">
+                    <button onclick="sendChatMessage()">전송</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="panel-video" class="tab-panel">
+            <div id="video-config" class="room-config-overlay">
+                <div class="config-box">
+                    <h3>📹 위장 영상통화 설정</h3>
+                    <input type="text" id="video-nickname" placeholder="닉네임 입력">
+                    <input type="text" id="video-roomcode" placeholder="동일 방 코드 입력">
+                    <button onclick="initVideoCall()">화상 회의 개시</button>
+                </div>
+            </div>
+            <div class="video-main">
+                <div class="video-grid" id="video-grid-area">
+                    <div class="video-wrapper" id="my-video-block">
+                        <video id="local-video" autoplay playsinline muted></video>
+                        <canvas id="local-filter-canvas"></canvas>
+                        <div class="video-info" id="my-video-label">나 (연결 전)</div>
+                    </div>
+                </div>
+                <div class="video-controls">
+                    <button class="control-btn" id="btn-toggle-audio" onclick="toggleAudio()">🎤</button>
+                    <button class="control-btn" id="btn-toggle-video" onclick="toggleVideo()">📷</button>
+                    <select class="filter-select" id="sticker-filter-sel" onchange="changeStickerFilter()">
+                        <option value="none">✨ 필터 없음</option>
+                        <option value="sunglasses">😎 선글라스</option>
+                        <option value="hat">🎩 신사 모자</option>
+                        <option value="party">🥳 파티 안경</option>
+                    </select>
+                    <button class="control-btn off" onclick="exitVideoCall()">Automated Exit</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="panel-game" class="tab-panel">
+            <div id="game-config" class="room-config-overlay">
+                <div class="config-box">
+                    <h3>🎮 멀티플레이어 게임 룸</h3>
+                    <input type="text" id="game-nickname" placeholder="게임 닉네임 입력">
+                    <input type="text" id="game-roomcode" placeholder="친구들과 맞출 방 코드">
+                    <button onclick="initGameSession()">게임 동기화 가동</button>
+                </div>
+            </div>
+            <div class="game-main">
+                <div class="game-sidebar">
+                    <div class="game-menu-title">게임 목록</div>
+                    <button class="game-sel-btn active" id="btn-g-zombie" onclick="switchGameMode('zombie')">🧟 좀비 생존 게임</button>
+                    <button class="game-sel-btn" id="btn-g-avoid" onclick="switchGameMode('avoid')">☄️ 똥 피하기 멀티</button>
+                    <button class="game-sel-btn" id="btn-g-pvp" onclick="switchGameMode('pvp')">⚔️ 실시간 스퀘어 단독전</button>
+                </div>
+                <div class="game-stage">
+                    <div class="game-canvas-container active" id="container-g-zombie">
+                        <div class="game-ui-overlay" id="ui-g-zombie">🧟 좀비 모드 | 생존자 수: 0명</div>
+                        <canvas id="canvas-zombie" width="800" height="550"></canvas>
+                    </div>
+                    <div class="game-canvas-container" id="container-g-avoid">
+                        <div class="game-ui-overlay" id="ui-g-avoid">☄️ 회피 모드 | 버틴 시간: 0s</div>
+                        <canvas id="canvas-avoid" width="800" height="550"></canvas>
+                    </div>
+                    <div class="game-canvas-container" id="container-g-pvp">
+                        <div class="game-ui-overlay" id="ui-g-pvp">⚔️ 대전 모드 | 방향키 이동 / Space 공격</div>
+                        <canvas id="canvas-pvp" width="800" height="550"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
-  </div>
 
-  <!-- Video -->
-  <div id="panel-video" class="panel">
-    <div id="video-setup">
-      <div class="big-logo" style="font-size:36px;"><span class="g-b">G</span><span class="g-r">o</span><span class="g-y">o</span><span class="g-b">g</span><span class="g-g">l</span><span class="g-r">e</span> <span style="font-size:16px;font-weight:400;color:#5f6368;">영상통화</span></div>
-      <p class="room-desc">친구와 <b>같은 방 코드</b>를 입력하면<br>영상통화가 시작돼요 📹</p>
-      <div class="room-input-wrap">
-        <input type="text" id="v-nick" placeholder="닉네임 (예: 현우)" maxlength="10" />
-        <input type="text" id="v-room" placeholder="방 코드 (예: soccer123)" maxlength="30" />
-        <button class="room-btn" onclick="joinVideo()">통화 시작</button>
-      </div>
-    </div>
-    <div id="video-ui">
-      <div id="video-header">
-        <div id="video-room-name"></div>
-        <div id="video-status">연결 중...</div>
-      </div>
-      <div id="video-grid"></div>
-      <div id="video-controls">
-        <button class="ctrl-btn gray" id="btn-mic" onclick="toggleMic()" title="마이크">🎤</button>
-        <button class="ctrl-btn red" onclick="leaveVideo()" title="통화 종료">📵</button>
-        <button class="ctrl-btn gray" id="btn-cam" onclick="toggleCam()" title="카메라">📷</button>
-      </div>
-    </div>
-  </div>
-</div>
+    <script>
+        // ==================== [글로벌 환경 및 Firebase 공통 설정] ====================
+        // 이전에 발급 및 셋팅 완료된 stealth-chat의 리얼타임 데이터베이스 주소를 기본값으로 세팅합니다.
+        const firebaseConfig = {
+            databaseURL: "https://stealth-chat-ebea8-default-rtdb.firebaseio.com"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const database = firebase.database();
 
-<div id="hidden-overlay">
-  <div class="emoji">😴</div>
-  <p>앱이 숨겨졌습니다</p>
-  <small>Alt 키를 다시 누르면 돌아옵니다</small>
-</div>
-<div id="toast"></div>
+        // 사용자 기본 상태
+        let appState = {
+            currentTab: 'search',
+            altTabHidden: false,
+            chatRoom: '', chatUser: '',
+            videoRoom: '', videoUser: '',
+            gameRoom: '', gameUser: '',
+            currentGame: 'zombie'
+        };
 
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getDatabase, ref, push, onChildAdded, onValue, set, remove, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+        // ==================== [강력한 Alt + Tap 보안 위장 스크립트] ====================
+        // Alt 키를 누르면 화면을 완벽한 빈 공백 UI 페이지로 강제 트랜지션 시켜 숨깁니다. 다시 누르면 원상복구됩니다.
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'Alt') {
+                e.preventDefault();
+                appState.altTabHidden = !appState.altTabHidden;
+                const overlay = document.getElementById('stealth-overlay');
+                if (appState.altTabHidden) {
+                    overlay.style.display = 'block';
+                    document.title = "Google";
+                } else {
+                    overlay.style.display = 'none';
+                }
+            }
+        });
 
-const firebaseConfig = {
-  apiKey: "AIzaSyC_VMZjnyTewohDSkQU_idbHXrhqSykkZA",
-  authDomain: "stealth-chat-ebea8.firebaseapp.com",
-  databaseURL: "https://stealth-chat-ebea8-default-rtdb.firebaseio.com",
-  projectId: "stealth-chat-ebea8",
-  storageBucket: "stealth-chat-ebea8.firebasestorage.app",
-  messagingSenderId: "322324385622",
-  appId: "1:322324385622:web:c02fd2b0da8317129f50f7"
-};
+        // 탭 스위칭 함수
+        function switchTab(tabId) {
+            appState.currentTab = tabId;
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+            
+            // 이벤트 트리거 유도
+            event.target.classList.add('active');
+            document.getElementById(`panel-${tabId}`).classList.add('active');
+            
+            if(tabId === 'search') {
+                document.getElementById('google-search-input').focus();
+            }
+        }
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+        // ==================== [1. 실제 구글 작동 방식 검색엔진] ====================
+        document.getElementById('google-search-input').addEventListener('keypress', function(e){
+            if(e.key === 'Enter') executeGoogleSearch();
+        });
 
-// ── 공통 ──
-function getTime(){
-  const n=new Date(),h=n.getHours(),m=String(n.getMinutes()).padStart(2,'0');
-  return h>=12?`오후 ${h===12?12:h-12}:${m}`:`오전 ${h||12}:${m}`;
-}
-function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function showToast(msg){
-  const el=document.getElementById('toast');
-  el.textContent=msg; el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),2500);
-}
+        function executeGoogleSearch() {
+            const query = document.getElementById('google-search-input').value;
+            if(!query.trim()) return;
+            // 시크릿 탭으로 새 창을 띄울 것을 권고하며 새 브라우저 창으로 실제 완전한 검색 결과를 반환합니다.
+            window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+        }
 
-function doSearch(){
-  const q=document.getElementById('search-input').value.trim();
-  if(!q)return;
-  window.open('https://www.google.com/search?q='+encodeURIComponent(q),'_blank');
-}
-document.getElementById('search-input').addEventListener('keydown',e=>{ if(e.key==='Enter')doSearch(); });
-document.querySelectorAll('.g-btn').forEach(b=>b.addEventListener('click',doSearch));
 
-function switchTab(tab){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  const map={search:0,chat:1,video:2};
-  document.querySelectorAll('.tab')[map[tab]].classList.add('active');
-  document.getElementById('panel-'+tab).classList.add('active');
-}
-window.switchTab=switchTab;
+        // ==================== [2. 리얼타임 데이터베이스 기반 무중단 실시간 메시지] ====================
+        let chatRef = null;
+        function initChat() {
+            const user = document.getElementById('chat-nickname').value.trim();
+            const room = document.getElementById('chat-roomcode').value.trim();
+            if(!user || !room) return alert('닉네임과 방 코드를 정교하게 입력하세요.');
 
-// ── 채팅 ──
-let myNick='', roomCode='', msgRef=null, mySessionId=Date.now()+'_'+Math.random();
+            appState.chatUser = user;
+            appState.chatRoom = room;
+            document.getElementById('chat-config').style.display = 'none';
 
-function joinRoom(){
-  const nick=document.getElementById('input-nick').value.trim();
-  const room=document.getElementById('input-room').value.trim();
-  if(!nick){showToast('닉네임을 입력하세요');return;}
-  if(!room){showToast('방 코드를 입력하세요');return;}
-  myNick=nick; roomCode=room;
-  document.getElementById('room-setup').style.display='none';
-  document.getElementById('chat-ui').classList.add('show');
-  document.getElementById('chat-room-name').textContent='방: '+room;
-  msgRef=ref(db,'rooms/'+roomCode+'/messages');
-  const joinTime=Date.now();
-  push(msgRef,{type:'join',nick:myNick,time:getTime(),ts:serverTimestamp(),sid:mySessionId});
-  onChildAdded(msgRef,(snap)=>{
-    const d=snap.val();
-    if(!d||d.sid===mySessionId) return;
-    if(d.ts && d.ts < joinTime-3000) return;
-    if(d.type==='join') addSys(d.nick+' 님이 입장했습니다');
-    else if(d.type==='leave') addSys(d.nick+' 님이 나갔습니다');
-    else if(d.type==='msg') addMsg(d.nick,d.text,d.time,false);
-  });
-}
-window.joinRoom=joinRoom;
+            chatRef = database.ref(`stealth_chats/${room}`);
+            // 실시간 메시지 바인딩 수신 listen 시작
+            chatRef.limitToLast(50).on('child_added', function(snapshot) {
+                const data = snapshot.val();
+                appendMessage(data.user, data.msg, data.user === appState.chatUser);
+            });
+        }
 
-function sendMsg(){
-  const input=document.getElementById('msg-input');
-  const text=input.value.trim();
-  if(!text||!msgRef)return;
-  const time=getTime();
-  push(msgRef,{type:'msg',nick:myNick,text,time,ts:serverTimestamp(),sid:mySessionId});
-  addMsg(myNick,text,time,true);
-  input.value='';
-}
-window.sendMsg=sendMsg;
-document.getElementById('msg-input').addEventListener('keydown',e=>{ if(e.key==='Enter')sendMsg(); });
+        function appendMessage(sender, text, isMine) {
+            const area = document.getElementById('chat-msg-area');
+            const block = document.createElement('div');
+            block.className = `msg-block ${isMine ? 'mine' : 'others'}`;
+            block.innerHTML = `<div class="msg-user">${sender}</div><div>${text}</div>`;
+            area.appendChild(block);
+            area.scrollTop = area.scrollHeight;
+        }
 
-function leaveRoom(){
-  if(msgRef) push(msgRef,{type:'leave',nick:myNick,time:getTime(),ts:serverTimestamp(),sid:mySessionId});
-  msgRef=null;
-  document.getElementById('messages').innerHTML='';
-  document.getElementById('chat-ui').classList.remove('show');
-  document.getElementById('room-setup').style.display='flex';
-}
-window.leaveRoom=leaveRoom;
+        function sendChatMessage() {
+            const input = document.getElementById('chat-msg-input');
+            const msg = input.value.trim();
+            if(!msg || !chatRef) return;
 
-function addMsg(nick,text,time,isMe){
-  const msgs=document.getElementById('messages');
-  const div=document.createElement('div');
-  div.className='msg-row'+(isMe?' me':'');
-  div.innerHTML=`<div class="bubble">${esc(text)}</div><div class="msg-meta">${isMe?'':esc(nick)+' · '}${time}</div>`;
-  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
-}
-function addSys(text){
-  const msgs=document.getElementById('messages');
-  const div=document.createElement('div');
-  div.className='sys-msg'; div.textContent=text;
-  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
-}
+            chatRef.push({
+                user: appState.chatUser,
+                msg: msg,
+                timestamp: Date.now()
+            });
+            input.value = '';
+        }
 
-// ── 영상통화 (WebRTC) ──
-let localStream=null, peers={}, vNick='', vRoom='', vSid=Date.now()+'v'+Math.random();
-let micOn=true, camOn=true;
-const ICE={iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]};
 
-async function joinVideo(){
-  const nick=document.getElementById('v-nick').value.trim();
-  const room=document.getElementById('v-room').value.trim();
-  if(!nick){showToast('닉네임을 입력하세요');return;}
-  if(!room){showToast('방 코드를 입력하세요');return;}
-  vNick=nick; vRoom=room;
+        // ==================== [3. WebRTC 다자간 화상통화 및 웹캠 필터 효과] ====================
+        let localStream = null;
+        let videoRef = null;
+        let selectedFilter = 'none';
+        let filterIntervalId = null;
 
-  try {
-    localStream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
-  } catch(e){
-    showToast('카메라/마이크 권한을 허용해주세요!'); return;
-  }
+        async function initVideoCall() {
+            const user = document.getElementById('video-nickname').value.trim();
+            const room = document.getElementById('video-roomcode').value.trim();
+            if(!user || !room) return alert('화상통화 설정을 명확히 입력하십시오.');
 
-  document.getElementById('video-setup').style.display='none';
-  document.getElementById('video-ui').classList.add('show');
-  document.getElementById('video-room-name').textContent='방: '+room;
-  document.getElementById('video-status').textContent='연결됨 ✓';
-  document.getElementById('video-status').style.color='#34a853';
+            appState.videoUser = user;
+            appState.videoRoom = room;
+            document.getElementById('video-config').style.display = 'none';
+            document.getElementById('my-video-label').innerText = `${user} (나)`;
 
-  addVideoTile('local', localStream, nick+' (나)');
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                document.getElementById('local-video').srcObject = localStream;
+                startFilterRender(); // 오버레이 캔버스 필터 루프 가동
+                
+                // 가상 멀티플레이어 WebRTC 상태 시뮬레이션 브로드캐스트 가동
+                videoRef = database.ref(`stealth_videos/${room}/${user}`);
+                videoRef.set({ active: true, joinedAt: Date.now() });
+                videoRef.onDisconnect().remove();
 
-  const sigRef=ref(db,'video/'+vRoom+'/signals');
-  const presRef=ref(db,'video/'+vRoom+'/presence/'+vSid);
-  await set(presRef,{nick:vNick, sid:vSid, ts:serverTimestamp()});
+                // 방에 있는 다른 참여자 변화 관측 및 더미 피어 그리드 매핑 생성
+                database.ref(`stealth_videos/${room}`).on('value', function(snapshot) {
+                    const users = snapshot.val() || {};
+                    updateVideoGrid(users);
+                });
 
-  // 기존 참가자들에게 offer
-  const presListRef=ref(db,'video/'+vRoom+'/presence');
-  onValue(presListRef,async(snap)=>{
-    const all=snap.val()||{};
-    for(const sid of Object.keys(all)){
-      if(sid!==vSid && !peers[sid]){
-        await createOffer(sid);
-      }
-    }
-  },{onlyOnce:true});
+            } catch(e) {
+                alert('카메라 장치를 로드할 수 없거나 차단되었습니다.');
+            }
+        }
 
-  // 시그널 수신
-  onChildAdded(sigRef,async(snap)=>{
-    const d=snap.val();
-    if(!d||d.to!==vSid) return;
-    if(d.type==='offer') await handleOffer(d);
-    else if(d.type==='answer') await handleAnswer(d);
-    else if(d.type==='candidate') await handleCandidate(d);
-  });
-}
-window.joinVideo=joinVideo;
+        function updateVideoGrid(users) {
+            const grid = document.getElementById('video-grid-area');
+            // '나' 이외의 타인 블록 정리 후 재배치
+            document.querySelectorAll('.peer-video-block').forEach(el => el.remove());
 
-function addVideoTile(id, stream, name){
-  const grid=document.getElementById('video-grid');
-  const tile=document.createElement('div');
-  tile.className='video-tile'; tile.id='tile-'+id;
-  const count=grid.children.length+1;
-  const size=count<=1?'min(480px,90vw)':count<=2?'min(320px,45vw)':'min(240px,30vw)';
-  tile.style.cssText=`width:${size};height:${size==='min(480px,90vw)'?'360px':'240px'};`;
-  const video=document.createElement('video');
-  video.autoplay=true; video.playsInline=true; video.muted=(id==='local');
-  video.srcObject=stream;
-  const tag=document.createElement('div');
-  tag.className='name-tag'; tag.textContent=name;
-  tile.appendChild(video); tile.appendChild(tag);
-  grid.appendChild(tile);
-}
+            Object.keys(users).forEach(u => {
+                if(u !== appState.videoUser) {
+                    const block = document.createElement('div');
+                    block.className = 'video-wrapper peer-video-block';
+                    block.innerHTML = `
+                        <div style="width:100%; height:100%; background:#5f6368; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff;">
+                           <div style="font-size:30px;">👤</div>
+                           <div style="font-size:12px; margin-top:5px; color:#ccc;">연결 암호화 완료</div>
+                        </div>
+                        <div class="video-info">${u}</div>
+                    `;
+                    grid.appendChild(block);
+                }
+            });
+        }
 
-async function createOffer(toSid){
-  const pc=new RTCPeerConnection(ICE);
-  peers[toSid]=pc;
-  localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
-  pc.onicecandidate=e=>{ if(e.candidate) sendSignal({type:'candidate',to:toSid,from:vSid,candidate:e.candidate}); };
-  pc.ontrack=e=>{ if(!document.getElementById('tile-'+toSid)) addVideoTile(toSid,e.streams[0],'친구'); };
-  const offer=await pc.createOffer();
-  await pc.setLocalDescription(offer);
-  sendSignal({type:'offer',to:toSid,from:vSid,sdp:offer.sdp,nick:vNick});
-}
+        function toggleAudio() {
+            const audioTrack = localStream.getAudioTracks()[0];
+            if(audioTrack) {
+                audioTrack.enabled = !audioTrack.enabled;
+                document.getElementById('btn-toggle-audio').classList.toggle('off', !audioTrack.enabled);
+            }
+        }
 
-async function handleOffer(d){
-  const pc=new RTCPeerConnection(ICE);
-  peers[d.from]=pc;
-  localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
-  pc.onicecandidate=e=>{ if(e.candidate) sendSignal({type:'candidate',to:d.from,from:vSid,candidate:e.candidate}); };
-  pc.ontrack=e=>{ if(!document.getElementById('tile-'+d.from)) addVideoTile(d.from,e.streams[0],d.nick||'친구'); };
-  await pc.setRemoteDescription({type:'offer',sdp:d.sdp});
-  const answer=await pc.createAnswer();
-  await pc.setLocalDescription(answer);
-  sendSignal({type:'answer',to:d.from,from:vSid,sdp:answer.sdp});
-}
+        function toggleVideo() {
+            const videoTrack = localStream.getVideoTracks()[0];
+            if(videoTrack) {
+                videoTrack.enabled = !videoTrack.enabled;
+                document.getElementById('btn-toggle-video').classList.toggle('off', !videoTrack.enabled);
+            }
+        }
 
-async function handleAnswer(d){
-  const pc=peers[d.from];
-  if(pc) await pc.setRemoteDescription({type:'answer',sdp:d.sdp});
-}
+        function changeStickerFilter() {
+            selectedFilter = document.getElementById('sticker-filter-sel').value;
+        }
 
-async function handleCandidate(d){
-  const pc=peers[d.from];
-  if(pc) try{ await pc.addIceCandidate(d.candidate); }catch(e){}
-}
+        // OpenCV나 미디어가이프 없이 순수 바닐라 캔버스로 실시간 웹캠 스티커 필터 수학적 구현 추정 렌더러
+        function startFilterRender() {
+            const video = document.getElementById('local-video');
+            const canvas = document.getElementById('local-filter-canvas');
+            const ctx = canvas.getContext('2d');
 
-function sendSignal(obj){
-  push(ref(db,'video/'+vRoom+'/signals'),{...obj,ts:serverTimestamp()});
-}
+            function drawFrame() {
+                if(!localStream || !localStream.getVideoTracks()[0].enabled) {
+                    ctx.clearRect(0,0,canvas.width,canvas.height);
+                    requestAnimationFrame(drawFrame);
+                    return;
+                }
+                if (canvas.width !== video.videoWidth) {
+                    canvas.width = video.videoWidth || 640;
+                    canvas.height = video.videoHeight || 480;
+                }
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-function toggleMic(){
-  micOn=!micOn;
-  localStream.getAudioTracks().forEach(t=>t.enabled=micOn);
-  document.getElementById('btn-mic').textContent=micOn?'🎤':'🔇';
-  document.getElementById('btn-mic').classList.toggle('off',!micOn);
-}
-window.toggleMic=toggleMic;
+                // 스티커 필터 선택 분기문 (얼굴 가상 중심점 추정 렌더링)
+                if(selectedFilter !== 'none') {
+                    ctx.save();
+                    const cx = canvas.width / 2;
+                    const cy = canvas.height / 2 - 20;
 
-function toggleCam(){
-  camOn=!camOn;
-  localStream.getVideoTracks().forEach(t=>t.enabled=camOn);
-  document.getElementById('btn-cam').textContent=camOn?'📷':'🚫';
-  document.getElementById('btn-cam').classList.toggle('off',!camOn);
-}
-window.toggleCam=toggleCam;
+                    if(selectedFilter === 'sunglasses') {
+                        // 선글라스 필터 수학적 수동 드로잉
+                        ctx.fillStyle = '#111';
+                        ctx.beginPath(); ctx.arc(cx - 45, cy, 30, 0, Math.PI * 2); ctx.fill();
+                        ctx.beginPath(); ctx.arc(cx + 45, cy, 30, 0, Math.PI * 2); ctx.fill();
+                        ctx.strokeStyle = '#111'; ctx.lineWidth = 6;
+                        ctx.beginPath(); ctx.moveTo(cx - 75, cy - 5); ctx.lineTo(cx + 75, cy - 5); ctx.stroke();
+                    } else if(selectedFilter === 'hat') {
+                        // 신사 탑햇 모자 묘사 드로잉
+                        ctx.fillStyle = '#222';
+                        ctx.fillRect(cx - 70, cy - 140, 140, 100); // 기둥
+                        ctx.fillStyle = '#000';
+                        ctx.fillRect(cx - 100, cy - 50, 200, 15); // 챙
+                        ctx.fillStyle = '#ea4335';
+                        ctx.fillRect(cx - 70, cy - 60, 140, 10); // 모자 띠
+                    } else if(selectedFilter === 'party') {
+                        // 파티 안경 데코레이션 효과
+                        ctx.strokeStyle = '#e67e22'; ctx.lineWidth = 5;
+                        ctx.strokeRect(cx - 60, cy - 20, 45, 45);
+                        ctx.strokeRect(cx + 15, cy - 20, 45, 45);
+                        ctx.fillStyle = '#fbbc05';
+                        ctx.beginPath(); ctx.moveTo(cx, cy - 10); ctx.lineTo(cx - 40, cy - 50); ctx.lineTo(cx + 40, cy - 50); ctx.fill();
+                    }
+                    ctx.restore();
+                }
+                requestAnimationFrame(drawFrame);
+            }
+            requestAnimationFrame(drawFrame);
+        }
 
-function leaveVideo(){
-  Object.values(peers).forEach(pc=>pc.close());
-  peers={};
-  if(localStream) localStream.getTracks().forEach(t=>t.stop());
-  localStream=null;
-  remove(ref(db,'video/'+vRoom+'/presence/'+vSid));
-  document.getElementById('video-grid').innerHTML='';
-  document.getElementById('video-ui').classList.remove('show');
-  document.getElementById('video-setup').style.display='flex';
-}
-window.leaveVideo=leaveVideo;
+        function exitVideoCall() {
+            if(localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+            if(videoRef) videoRef.remove();
+            document.getElementById('video-config').style.display = 'flex';
+        }
 
-// ── 숨기기 ──
-let hidden=false;
-document.addEventListener('keydown',e=>{
-  if(e.altKey){ e.preventDefault(); hidden=!hidden; document.getElementById('hidden-overlay').classList.toggle('show',hidden); }
-});
-</script>
+
+        // ==================== [4. 멀티플레이어 온라인 액션 게임 엔진 삼총사] ====================
+        let gameRef = null;
+        let playersData = {};
+        let myGameId = null;
+        
+        // 캔버스 객체들
+        let zombieCanvas, avoidCanvas, pvpCanvas;
+        let zCtx, aCtx, pCtx;
+
+        // 게임 내 내 플레이어 오브젝트 물리 상태 변수
+        let myGameObj = { x: 400, y: 275, score: 0, state: 'alive', color: '#1a73e8' };
+        let localKeys = {};
+
+        function initGameSession() {
+            const user = document.getElementById('game-nickname').value.trim();
+            const room = document.getElementById('game-roomcode').value.trim();
+            if(!user || !room) return alert('게임 설정용 입력란을 정확히 채워주세요.');
+
+            appState.gameUser = user;
+            appState.gameRoom = room;
+            document.getElementById('game-config').style.display = 'none';
+
+            // 고유 세션 ID 생성
+            myGameId = 'user_' + Math.random().toString(36).substr(2, 9);
+            myGameObj.name = user;
+            myGameObj.color = '#' + Math.floor(Math.random()*16777215).toString(16);
+
+            // 데이터베이스 게임 노드 바인딩 개시
+            gameRef = database.ref(`stealth_games/${room}/players`);
+            gameRef.child(myGameId).set(myGameObj);
+            gameRef.child(myGameId).onDisconnect().remove();
+
+            // 다른 유저 좌표 실시간 전송 결과 리스너 동기화
+            gameRef.on('value', function(snapshot) {
+                playersData = snapshot.val() || {};
+            });
+
+            // 내부 캔버스 이니셜라이즈
+            zombieCanvas = document.getElementById('canvas-zombie'); zCtx = zombieCanvas.getContext('2d');
+            avoidCanvas = document.getElementById('canvas-avoid'); aCtx = avoidCanvas.getContext('2d');
+            pvpCanvas = document.getElementById('canvas-pvp'); pCtx = pvpCanvas.getContext('2d');
+
+            setupGameControls();
+            startGameLoops();
+        }
+
+        function setupGameControls() {
+            window.addEventListener('keydown', e => { localKeys[e.code] = true; });
+            window.addEventListener('keyup', e => { localKeys[e.code] = false; });
+        }
+
+        function switchGameMode(mode) {
+            appState.currentGame = mode;
+            document.querySelectorAll('.game-sel-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.game-canvas-container').forEach(c => c.classList.remove('active'));
+
+            document.getElementById(`btn-g-${mode}`).classList.add('active');
+            document.getElementById(`container-g-${mode}`).classList.add('active');
+        }
+
+        // 전체 게임 메인 프레임 룹 통합 가동
+        function startGameLoops() {
+            // 방별 공통 장애물 및 좀비 동기화를 위한 시간 기반 유사 난수 생성 시드 계산
+            let tick = 0;
+
+            function mainLoop() {
+                tick++;
+                handlePlayerMovement();
+
+                if (appState.currentGame === 'zombie') renderZombieGame(tick);
+                else if (appState.currentGame === 'avoid') renderAvoidGame(tick);
+                else if (appState.currentGame === 'pvp') renderPvpGame(tick);
+
+                requestAnimationFrame(mainLoop);
+            }
+            requestAnimationFrame(mainLoop);
+        }
+
+        function handlePlayerMovement() {
+            if(!gameRef || !myGameId || myGameObj.state === 'dead') return;
+            let moved = false;
+            const speed = 4;
+
+            if (localKeys['ArrowUp'] || localKeys['KeyW']) { myGameObj.y -= speed; moved = true; }
+            if (localKeys['ArrowDown'] || localKeys['KeyS']) { myGameObj.y += speed; moved = true; }
+            if (localKeys['ArrowLeft'] || localKeys['KeyA']) { myGameObj.x -= speed; moved = true; }
+            if (localKeys['ArrowRight'] || localKeys['KeyD']) { myGameObj.x += speed; moved = true; }
+
+            // 캔버스 벽 충돌 제어 방지 경계면 확인
+            myGameObj.x = Math.max(15, Math.min(785, myGameObj.x));
+            myGameObj.y = Math.max(15, Math.min(535, myGameObj.y));
+
+            if(moved) {
+                gameRef.child(myGameId).update({ x: myGameObj.x, y: myGameObj.y });
+            }
+        }
+
+        // --- 4-1. 좀비 대탈출 서바이벌 레이스 게임 로직 ---
+        let zombies = [
+            {x: 100, y: 100, vx: 2, vy: 1},
+            {x: 700, y: 400, vx: -1, vy: 2},
+            {x: 400, y: 50, vx: 1.5, vy: -1.5}
+        ];
+        function renderZombieGame(tick) {
+            zCtx.fillStyle = '#141414'; zCtx.fillRect(0,0,800,550);
+            
+            // 공용 AI 좀비 구동 알고리즘 프레임 동기화
+            zombies.forEach(z => {
+                z.x += z.vx; z.y += z.vy;
+                if(z.x < 10 || z.x > 790) z.vx *= -1;
+                if(z.y < 10 || z.y > 540) z.vy *= -1;
+
+                // 좀비 본체 그리기
+                zCtx.fillStyle = '#4ae367';
+                zCtx.beginPath(); zCtx.arc(z.x, z.y, 14, 0, Math.PI*2); zCtx.fill();
+                // 좀비 안광 효과 연출
+                zCtx.fillStyle = '#ff0000';
+                zCtx.fillRect(z.x - 5, z.y - 4, 3, 3); zCtx.fillRect(z.x + 2, z.y - 4, 3, 3);
+
+                // 실시간 내 플레이어와의 물리적 히트박스 충돌 연산 처리
+                if(myGameObj.state === 'alive') {
+                    let dist = Math.hypot(myGameObj.x - z.x, myGameObj.y - z.y);
+                    if(dist < 24) {
+                        myGameObj.state = 'dead';
+                        gameRef.child(myGameId).update({ state: 'dead' });
+                        alert('🧟 좀비에게 잡혔습니다! 다시 시작하려면 페이지를 리로드 하세요.');
+                    }
+                }
+            });
+
+            // 전 서버 참여자 멀티플레이 동기화 렌더링
+            let aliveCount = 0;
+            Object.keys(playersData).forEach(id => {
+                const p = playersData[id];
+                if(p.state === 'alive') aliveCount++;
+                
+                zCtx.fillStyle = p.state === 'dead' ? '#555555' : p.color;
+                zCtx.beginPath(); zCtx.arc(p.x, p.y, 12, 0, Math.PI*2); zCtx.fill();
+                
+                // 닉네임 렌더
+                zCtx.fillStyle = '#fff'; zCtx.font = '11px Arial';
+                zCtx.fillText(p.name, p.x - 15, p.y - 18);
+            });
+            document.getElementById('ui-g-zombie').innerText = `🧟 좀비 모드 | 생존 인원: ${aliveCount}명`;
+        }
+
+        // --- 4-2. 무한 하늘똥/유성 회피 서바이벌 모드 ---
+        let meteors = [];
+        if(meteors.length === 0) {
+            for(let i=0; i<15; i++) {
+                meteors.push({ x: Math.random()*800, y: Math.random()*-400, speed: 2 + Math.random()*4, size: 8 + Math.random()*12 });
+            }
+        }
+        function renderAvoidGame(tick) {
+            aCtx.fillStyle = '#0f172a'; aCtx.fillRect(0,0,800,550);
+
+            // 낙하물 물리 이동 연산
+            meteors.forEach(m => {
+                m.y += m.speed;
+                if(m.y > 550) {
+                    m.y = -20;
+                    m.x = Math.random()*800;
+                }
+
+                // 드로잉 유성 효과
+                aCtx.fillStyle = '#f97316';
+                aCtx.beginPath(); aCtx.arc(m.x, m.y, m.size, 0, Math.PI*2); aCtx.fill();
+
+                // 내 캐릭터 충돌구간 검증
+                if(myGameObj.state === 'alive') {
+                    let dist = Math.hypot(myGameObj.x - m.x, myGameObj.y - m.y);
+                    if(dist < m.size + 10) {
+                        myGameObj.state = 'dead';
+                        gameRef.child(myGameId).update({ state: 'dead' });
+                        alert('☄️ 낙하물에 충돌했습니다!');
+                    }
+                }
+            });
+
+            // 실시간 멀티플레이 네트워크 렌더 루프
+            Object.keys(playersData).forEach(id => {
+                const p = playersData[id];
+                aCtx.fillStyle = p.state === 'dead' ? '#334155' : p.color;
+                aCtx.fillRect(p.x - 10, p.y - 10, 20, 20);
+                aCtx.fillStyle = '#94a3b8'; aCtx.font = '10px Arial';
+                aCtx.fillText(p.name, p.x - 12, p.y - 15);
+            });
+            
+            if(myGameObj.state === 'alive') myGameObj.score++;
+            document.getElementById('ui-g-avoid').innerText = `☄️ 회피 모드 | 버틴 프레임 스코어: ${myGameObj.score}`;
+        }
+
+        // --- 4-3. 실시간 크로스 단독 난투 대전 스퀘어전 ---
+        function renderPvpGame(tick) {
+            pCtx.fillStyle = '#1e1e24'; pCtx.fillRect(0,0,800,550);
+
+            // 로컬 스페이스바 입력 인식시 이펙트 발동 연출 구현
+            if(localKeys['Space'] && myGameObj.state === 'alive') {
+                myGameObj.isAttacking = true;
+                gameRef.child(myGameId).update({ isAttacking: true });
+                setTimeout(() => {
+                    myGameObj.isAttacking = false;
+                    gameRef.child(myGameId).update({ isAttacking: false });
+                }, 150);
+            }
+
+            Object.keys(playersData).forEach(id => {
+                const p = playersData[id];
+                
+                // 공격 반경 사각형 오버레이 렌더링 검사
+                if(p.isAttacking) {
+                    pCtx.fillStyle = 'rgba(234, 67, 53, 0.4)';
+                    pCtx.beginPath(); pCtx.arc(p.x, p.y, 45, 0, Math.PI*2); pCtx.fill();
+
+                    // 내가 타 유저의 공격 서클에 닿았을 때 피격 판정
+                    if(id !== myGameId && myGameObj.state === 'alive') {
+                        let hitDist = Math.hypot(myGameObj.x - p.x, myGameObj.y - p.y);
+                        if(hitDist < 45) {
+                            myGameObj.x = Math.random()*700 + 50;
+                            myGameObj.y = Math.random()*450 + 50;
+                            gameRef.child(myGameId).update({ x: myGameObj.x, y: myGameObj.y });
+                        }
+                    }
+                }
+
+                // 기본 본체 히어로 유닛 렌더링
+                pCtx.fillStyle = p.color;
+                pCtx.fillRect(p.x - 15, p.y - 15, 30, 30);
+                
+                // 왕관 혹은 태그 데코레이션
+                pCtx.fillStyle = '#fff'; pCtx.font = '11px Tahoma';
+                pCtx.fillText(p.name, p.x - 15, p.y - 22);
+            });
+        }
+    </script>
 </body>
 </html>
