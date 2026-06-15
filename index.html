@@ -1,423 +1,426 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>Google</title>
-    <link rel="shortcut icon" href="https://www.google.com/favicon.ico">
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <style>
-        body, html { margin:0; padding:0; width:100%; height:100%; font-family:arial,sans-serif; overflow:hidden; background:#fff; }
-        
-        /* 상단 위장 바 & 탭 */
-        .top-bar { display:flex; justify-content:space-between; align-items:center; padding:10px 20px; background:#fff; border-bottom:1px solid #f2f2f2; }
-        .tabs { display:flex; gap:15px; }
-        .tab-btn { background:none; border:none; color:#5f6368; font-size:14px; cursor:pointer; padding:5px 10px; }
-        .tab-btn:hover { color:#1a73e8; }
-        .tab-btn.active { color:#1a73e8; font-weight:bold; border-bottom:2px solid #1a73e8; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Google</title>
+<link rel="icon" href="https://www.google.com/favicon.ico">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:arial,sans-serif; }
+  body { background:#fff; height:100vh; overflow:hidden; }
+  #app { display:flex; flex-direction:column; height:100vh; }
+  #topbar { display:flex; align-items:center; justify-content:space-between; padding:8px 16px; border-bottom:1px solid #e0e0e0; background:#fff; flex-shrink:0; }
+  #topbar-left { display:flex; align-items:center; gap:24px; }
+  #topbar-left a { font-size:13px; color:#202124; text-decoration:none; }
+  .g-b{color:#4285F4}.g-r{color:#EA4335}.g-y{color:#FBBC05}.g-g{color:#34A853}
+  .g-logo { font-size:22px; font-weight:700; letter-spacing:-1px; }
+  .btn-signin { background:#1a73e8;color:#fff;border:none;border-radius:4px;padding:8px 16px;font-size:14px;cursor:pointer; }
+  #tabs { display:flex; border-bottom:1px solid #e0e0e0; flex-shrink:0; }
+  .tab { padding:10px 20px;font-size:13px;cursor:pointer;color:#5f6368;border-bottom:2px solid transparent;user-select:none; }
+  .tab.active { color:#1a73e8;border-bottom:2px solid #1a73e8;font-weight:500; }
+  .tab:hover { background:#f1f3f4; }
+  .panel { flex:1;overflow-y:auto;display:none;flex-direction:column;min-height:0; }
+  .panel.active { display:flex; }
 
-        /* 컨텐츠 영역 */
-        .content-area { width:100%; height:calc(100% - 50px); position:relative; }
-        .page { display:none; width:100%; height:100%; position:absolute; top:0; left:0; }
-        .page.active { display:block; }
+  /* Search */
+  #search-hero { display:flex;flex-direction:column;align-items:center;padding:80px 20px 20px;gap:20px; }
+  .big-logo { font-size:72px;font-weight:700;letter-spacing:-4px;line-height:1; }
+  #search-box-wrap { display:flex;align-items:center;width:100%;max-width:580px;border:1px solid #dfe1e5;border-radius:24px;padding:10px 16px;box-shadow:0 1px 3px rgba(0,0,0,.1);gap:10px; }
+  #search-box-wrap:focus-within { box-shadow:0 1px 6px rgba(0,0,0,.2); }
+  #search-input { flex:1;border:none;outline:none;font-size:16px;color:#202124; }
+  .search-btns { display:flex;gap:10px;margin-top:4px; }
+  .g-btn { background:#f8f9fa;border:1px solid #f8f9fa;border-radius:4px;padding:9px 23px;font-size:14px;color:#3c4043;cursor:pointer; }
+  .g-btn:hover { border-color:#dadce0; }
 
-        /* 1. 구글 메인 위장 홈 */
-        .google-home { display:flex; flex-direction:column; align-items:center; justify-content:center; height:80%; }
-        .logo { font-size:90px; font-weight:bold; font-family: 'Product Sans', sans-serif; margin-bottom:30px; user-select:none; }
-        .logo span:nth-child(1) { color: #4285F4; }
-        .logo span:nth-child(2) { color: #EA4335; }
-        .logo span:nth-child(3) { color: #FBBC05; }
-        .logo span:nth-child(4) { color: #4285F4; }
-        .logo span:nth-child(5) { color: #34A853; }
-        .logo span:nth-child(6) { color: #EA4335; }
-        .search-box { width:580px; position:relative; }
-        .search-input { width:100%; padding:14px 20px 14px 45px; border:1px solid #dfe1e5; border-radius:24px; font-size:16px; outline:none; box-sizing:border-box; }
-        .search-input:hover, .search-input:focus { box-shadow: 0 1px 6px rgba(32,33,36,.28); border-color:rgba(223,225,229,0); }
-        .search-icon { position:absolute; left:15px; top:15px; color:#9aa0a6; }
+  /* Chat */
+  #room-setup { flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px; }
+  .room-input-wrap { display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px; }
+  .room-input-wrap input { border:1px solid #dfe1e5;border-radius:4px;padding:10px 14px;font-size:14px;outline:none; }
+  .room-input-wrap input:focus { border-color:#1a73e8; }
+  .room-btn { background:#1a73e8;color:#fff;border:none;border-radius:4px;padding:10px;font-size:14px;cursor:pointer; }
+  .room-desc { font-size:13px;color:#5f6368;text-align:center;max-width:300px;line-height:1.6; }
+  #chat-ui { display:none;flex:1;flex-direction:column;min-height:0; }
+  #chat-ui.show { display:flex; }
+  #chat-header { padding:12px 20px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;gap:12px;flex-shrink:0; }
+  #chat-room-info { flex:1; }
+  #chat-room-name { font-size:15px;font-weight:500;color:#202124; }
+  #chat-status { font-size:12px;color:#34a853;margin-top:2px; }
+  #leave-btn { font-size:12px;color:#ea4335;background:none;border:1px solid #ea4335;border-radius:4px;padding:4px 10px;cursor:pointer; }
+  #messages { flex:1;padding:16px 20px;overflow-y:auto;display:flex;flex-direction:column;gap:6px; }
+  .msg-row { display:flex;flex-direction:column; }
+  .msg-row.me { align-items:flex-end; }
+  .bubble { max-width:65%;padding:8px 14px;border-radius:18px;font-size:14px;line-height:1.5;background:#f1f3f4;color:#202124;border-bottom-left-radius:4px; }
+  .msg-row.me .bubble { background:#1a73e8;color:#fff;border-bottom-left-radius:18px;border-bottom-right-radius:4px; }
+  .msg-meta { font-size:11px;color:#9aa0a6;margin-top:2px;padding:0 4px; }
+  .msg-row.me .msg-meta { text-align:right; }
+  .sys-msg { text-align:center;font-size:12px;color:#9aa0a6;padding:6px 0; }
+  #chat-input-row { display:flex;align-items:center;gap:10px;padding:12px 20px;border-top:1px solid #e0e0e0;flex-shrink:0; }
+  #msg-input { flex:1;border:1px solid #dfe1e5;border-radius:24px;padding:10px 16px;font-size:14px;outline:none; }
+  #msg-input:focus { border-color:#1a73e8; }
+  #send-btn { background:#1a73e8;color:#fff;border:none;border-radius:50%;width:38px;height:38px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center; }
 
-        /* 2. 채팅 / 영상통화 / 게임 공통 로그인 바 */
-        .room-bar { background:#f8f9fa; padding:10px 20px; display:flex; gap:10px; align-items:center; border-bottom:1px solid #ddd; }
-        .room-bar input { padding:6px 12px; border:1px solid #ddd; border-radius:4px; }
-        .room-bar button { padding:6px 15px; background:#1a73e8; color:#fff; border:none; border-radius:4px; cursor:pointer; }
+  /* Video Call */
+  #video-setup { flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px; }
+  #video-ui { display:none;flex:1;flex-direction:column;min-height:0;background:#202124; }
+  #video-ui.show { display:flex; }
+  #video-grid { flex:1;display:flex;flex-wrap:wrap;gap:4px;padding:4px;align-content:center;justify-content:center;overflow:hidden; }
+  .video-tile { position:relative;background:#3c4043;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center; }
+  .video-tile video { width:100%;height:100%;object-fit:cover; }
+  .video-tile .name-tag { position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:2px 8px;border-radius:4px; }
+  .video-tile .no-video { font-size:40px;color:#9aa0a6; }
+  #video-controls { display:flex;align-items:center;justify-content:center;gap:16px;padding:16px;flex-shrink:0;background:#202124; }
+  .ctrl-btn { width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px; }
+  .ctrl-btn.red { background:#ea4335; }
+  .ctrl-btn.gray { background:#3c4043; }
+  .ctrl-btn.gray.off { background:#ea4335; }
+  #video-header { display:flex;align-items:center;justify-content:space-between;padding:12px 20px;flex-shrink:0;background:#202124; }
+  #video-room-name { color:#fff;font-size:14px; }
+  #video-status { color:#34a853;font-size:12px; }
 
-        /* 3. 실시간 채팅 창 */
-        .chat-container { display:flex; flex-direction:column; height:calc(100% - 55px); }
-        .messages { flex:1; padding:20px; overflow-y:auto; background:#f1f3f4; display:flex; flex-direction:column; gap:10px; }
-        .msg { max-width:60%; padding:10px; border-radius:8px; background:#fff; align-self:flex-start; }
-        .msg.me { background:#d2e3fc; align-self:flex-end; }
-        .chat-input-bar { display:flex; padding:15px; background:#fff; border-top:1px solid #ddd; }
-        .chat-input-bar input { flex:1; padding:10px; border:1px solid #ddd; border-radius:4px; outline:none; }
-        
-        /* 4. WebRTC 영상 통화 */
-        .stream-container { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:15px; padding:20px; height:calc(100% - 130px); background:#202124; overflow-y:auto; }
-        .video-box { position:relative; background:#000; border-radius:8px; overflow:hidden; aspect-ratio:4/3; }
-        video { width:100%; height:100%; object-fit:cover; }
-        .video-label { position:absolute; bottom:10px; left:10px; color:#fff; background:rgba(0,0,0,0.6); padding:3px 8px; border-radius:4px; font-size:12px; }
-        .controls { display:flex; justify-content:center; gap:15px; padding:15px; background:#171717; }
-        .controls button { padding:10px 20px; border-radius:20px; border:none; cursor:pointer; font-weight:bold; }
-        .btn-on { background:#fff; color:#000; }
-        .btn-off { background:#ea4335; color:#fff; }
-
-        /* 5. ZEP 스타일 좀비 미니 게임 */
-        .game-container { display:flex; flex-direction:column; align-items:center; justify-content:center; height:calc(100% - 55px); background:#2b2b2b; color:#fff; position:relative; }
-        #gameCanvas { background:#3e3e3e; border:4px solid #555; border-radius:8px; display:none; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .game-intro { text-align:center; background:rgba(0,0,0,0.4); padding:3px 30px 25px 30px; border-radius:10px; }
-        .game-status { font-size:18px; font-weight:bold; margin-bottom:10px; color:#fbbf24; }
-
-        /* Alt+Tab 스텔스 화면 */
-        .stealth-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#f4f4f4; z-index:9999ff; justify-content:center; align-items:center; color:#666; font-size:14px; }
-    </style>
+  #hidden-overlay { display:none;position:fixed;inset:0;background:#fff;z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:10px; }
+  #hidden-overlay.show { display:flex; }
+  #hidden-overlay .emoji { font-size:52px; }
+  #hidden-overlay p { font-size:15px;color:#5f6368; }
+  #hidden-overlay small { font-size:13px;color:#9aa0a6; }
+  #toast { position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#323232;color:#fff;border-radius:6px;padding:10px 20px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .3s;white-space:nowrap;z-index:999; }
+  #toast.show { opacity:1; }
+</style>
 </head>
 <body>
-
-    <div class="top-bar" id="topBar">
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchPage('home')">🔍 Google</button>
-            <button class="tab-btn" onclick="switchPage('chat')">💬 메시지</button>
-            <button class="tab-btn" onclick="switchPage('video')">📹 영상통화</button>
-            <button class="tab-btn" onclick="switchPage('game')">🎮 게임 (ZEP)</button>
-        </div>
-        <div style="color:#5f6368; font-size:14px;">hyunwoo0117 님</div>
+<div id="app">
+  <div id="topbar">
+    <div id="topbar-left">
+      <span class="g-logo"><span class="g-b">G</span><span class="g-r">o</span><span class="g-y">o</span><span class="g-b">g</span><span class="g-g">l</span><span class="g-r">e</span></span>
+      <a href="#">소개</a><a href="#">스토어</a>
     </div>
+    <div><button class="btn-signin">로그인</button></div>
+  </div>
+  <div id="tabs">
+    <div class="tab active" onclick="switchTab('search')">🔍 검색</div>
+    <div class="tab" onclick="switchTab('chat')">💬 메시지</div>
+    <div class="tab" onclick="switchTab('video')">📹 영상통화</div>
+  </div>
 
-    <div class="content-area">
-        <div id="page-home" class="page active">
-            <div class="google-home">
-                <div class="logo"><span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span></div>
-                <div class="search-box">
-                    <span class="search-icon">🔍</span>
-                    <input type="text" class="search-input" placeholder="Google 검색 또는 URL 입력" onkeydown="if(event.key==='Enter') doGoogleSearch(this.value)">
-                </div>
-            </div>
-        </div>
-
-        <div id="page-chat" class="page">
-            <div class="room-bar">
-                <input type="text" id="chat-nick" placeholder="닉네임">
-                <input type="text" id="chat-room" placeholder="방 코드 (예: 우리방123)">
-                <button onclick="joinChat()">입장하기</button>
-            </div>
-            <div class="chat-container">
-                <div class="messages" id="chat-messages"></div>
-                <div class="chat-input-bar">
-                    <input type="text" id="chat-input" placeholder="메시지를 입력하세요..." onkeydown="if(event.key==='Enter') sendChatMessage()">
-                    <button onclick="sendChatMessage()" style="padding:10px 20px; background:#1a73e8; color:#fff; border:none; margin-left:10px; border-radius:4px; cursor:pointer;">전송</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="page-video" class="page">
-            <div class="room-bar">
-                <input type="text" id="video-room" placeholder="영상 방 코드">
-                <button onclick="joinVideo()">통화 시작</button>
-            </div>
-            <div class="stream-container" id="video-streams">
-                <div class="video-box"><video id="localVideo" autoplay playsinline muted></video><div class="video-label">나 (내 화면)</div></div>
-            </div>
-            <div class="controls">
-                <button id="btn-audio" class="btn-on" onclick="toggleAudio()">🎤 마이크 켬</button>
-                <button id="btn-video" class="btn-on" onclick="toggleVideo()">📷 카메라 켬</button>
-            </div>
-        </div>
-
-        <div id="page-game" class="page">
-            <div class="room-bar">
-                <input type="text" id="game-nick" placeholder="닉네임">
-                <input type="text" id="game-room" placeholder="게임 방 코드">
-                <button onclick="joinGame()">게임 입장</button>
-            </div>
-            <div class="game-container">
-                <div class="game-intro" id="gameIntro">
-                    <h2>🧟 ZEP style 좀비 인피니티 게임</h2>
-                    <p>친구들과 같은 방 코드로 입장하세요!</p>
-                    <p>방향키(↑,↓,←,→)로 움직여 무작위로 생성되는 <b>좀비(빨간색 원)</b>를 피하세요.</p>
-                    <p>버틴 시간에 따라 점수가 오릅니다. 가장 오래 살아남는 사람은 누구?!</p>
-                </div>
-                <div class="game-status" id="gameStatus" style="display:none;">점수: 0 | 생존상태: 생존</div>
-                <canvas id="gameCanvas" width="700" height="450"></canvas>
-            </div>
-        </div>
+  <!-- Search -->
+  <div id="panel-search" class="panel active">
+    <div id="search-hero">
+      <div class="big-logo"><span class="g-b">G</span><span class="g-r">o</span><span class="g-y">o</span><span class="g-b">g</span><span class="g-g">l</span><span class="g-r">e</span></div>
+      <div id="search-box-wrap">
+        <svg width="20" height="20" fill="#9aa0a6" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        <input type="text" id="search-input" placeholder="Google 검색 또는 URL 입력" />
+      </div>
+      <div class="search-btns">
+        <button class="g-btn" onclick="doSearch()">Google 검색</button>
+        <button class="g-btn" onclick="doSearch()">I'm Feeling Lucky</button>
+      </div>
     </div>
+  </div>
 
-    <div class="stealth-overlay" id="stealthOverlay">
-        <div>시스템 업데이트 중... 잠시만 기다려주십시오. (0%)</div>
+  <!-- Chat -->
+  <div id="panel-chat" class="panel">
+    <div id="room-setup">
+      <div class="big-logo" style="font-size:36px;"><span class="g-b">G</span><span class="g-r">o</span><span class="g-y">o</span><span class="g-b">g</span><span class="g-g">l</span><span class="g-r">e</span> <span style="font-size:16px;font-weight:400;color:#5f6368;">메시지</span></div>
+      <p class="room-desc">친구와 <b>같은 방 코드</b>를 입력하면<br>실시간 채팅 가능해요 😊</p>
+      <div class="room-input-wrap">
+        <input type="text" id="input-nick" placeholder="닉네임 (예: 현우)" maxlength="10" />
+        <input type="text" id="input-room" placeholder="방 코드 (예: soccer123)" maxlength="30" />
+        <button class="room-btn" onclick="joinRoom()">입장하기</button>
+      </div>
     </div>
+    <div id="chat-ui">
+      <div id="chat-header">
+        <div id="chat-room-info">
+          <div id="chat-room-name"></div>
+          <div id="chat-status">연결됨 ✓</div>
+        </div>
+        <button id="leave-btn" onclick="leaveRoom()">나가기</button>
+      </div>
+      <div id="messages"></div>
+      <div id="chat-input-row">
+        <input type="text" id="msg-input" placeholder="메시지 입력..." />
+        <button id="send-btn" onclick="sendMsg()">➤</button>
+      </div>
+    </div>
+  </div>
 
-    <script>
-        // --- 0. Firebase 설정값 (현우님이 연동해둔 정보 그대로 사용) ---
-        const firebaseConfig = {
-            databaseURL: "https://stealth-chat-ebea8-default-rtdb.firebaseio.com"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+  <!-- Video -->
+  <div id="panel-video" class="panel">
+    <div id="video-setup">
+      <div class="big-logo" style="font-size:36px;"><span class="g-b">G</span><span class="g-r">o</span><span class="g-y">o</span><span class="g-b">g</span><span class="g-g">l</span><span class="g-r">e</span> <span style="font-size:16px;font-weight:400;color:#5f6368;">영상통화</span></div>
+      <p class="room-desc">친구와 <b>같은 방 코드</b>를 입력하면<br>영상통화가 시작돼요 📹</p>
+      <div class="room-input-wrap">
+        <input type="text" id="v-nick" placeholder="닉네임 (예: 현우)" maxlength="10" />
+        <input type="text" id="v-room" placeholder="방 코드 (예: soccer123)" maxlength="30" />
+        <button class="room-btn" onclick="joinVideo()">통화 시작</button>
+      </div>
+    </div>
+    <div id="video-ui">
+      <div id="video-header">
+        <div id="video-room-name"></div>
+        <div id="video-status">연결 중...</div>
+      </div>
+      <div id="video-grid"></div>
+      <div id="video-controls">
+        <button class="ctrl-btn gray" id="btn-mic" onclick="toggleMic()" title="마이크">🎤</button>
+        <button class="ctrl-btn red" onclick="leaveVideo()" title="통화 종료">📵</button>
+        <button class="ctrl-btn gray" id="btn-cam" onclick="toggleCam()" title="카메라">📷</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-        let currentNick = "익명";
-        let currentRoom = "";
-        let chatRef, gameRef;
+<div id="hidden-overlay">
+  <div class="emoji">😴</div>
+  <p>앱이 숨겨졌습니다</p>
+  <small>Alt 키를 다시 누르면 돌아옵니다</small>
+</div>
+<div id="toast"></div>
 
-        // --- 1. 페이지 전환 기능 ---
-        function switchPage(pageId) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            
-            document.getElementById(`page-${pageId}`).classList.add('active');
-            event.target.classList.add('active');
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, push, onChildAdded, onValue, set, remove, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
-            if(pageId === 'game' && gameLoopInterval) {
-                // 게임 페이지로 올 때 활성화 상태 체크
-            }
-        }
+const firebaseConfig = {
+  apiKey: "AIzaSyC_VMZjnyTewohDSkQU_idbHXrhqSykkZA",
+  authDomain: "stealth-chat-ebea8.firebaseapp.com",
+  databaseURL: "https://stealth-chat-ebea8-default-rtdb.firebaseio.com",
+  projectId: "stealth-chat-ebea8",
+  storageBucket: "stealth-chat-ebea8.firebasestorage.app",
+  messagingSenderId: "322324385622",
+  appId: "1:322324385622:web:c02fd2b0da8317129f50f7"
+};
 
-        // --- 2. 진짜 구글 검색 연동 ---
-        function doGoogleSearch(query) {
-            if(query.trim() !== "") {
-                window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
-            }
-        }
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-        // --- 3. 스텔스 모드 (Alt + Tab 감지 대체 최적화) ---
-        // 웹 브라우저 안에서 진짜 Alt+Tab을 누르면 PC 운영체제 창이 바뀌므로, 
-        // 브라우저 밖으로 튕기거나 'Alt' 키를 눌렀을 때 화면을 즉시 가리는 하이브리드 보호 기능을 적용했습니다.
-        let isHidden = false;
-        window.addEventListener('keydown', function(e) {
-            if (e.key === 'Alt') {
-                e.preventDefault();
-                toggleStealth();
-            }
-        });
-        window.addEventListener('blur', function() {
-            // 브라우저 탭을 아예 바꾸거나 창을 내릴 때 즉시 가짜화면으로 위장
-            document.getElementById('stealthOverlay').style.display = 'flex';
-            isHidden = true;
-        });
+// ── 공통 ──
+function getTime(){
+  const n=new Date(),h=n.getHours(),m=String(n.getMinutes()).padStart(2,'0');
+  return h>=12?`오후 ${h===12?12:h-12}:${m}`:`오전 ${h||12}:${m}`;
+}
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function showToast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2500);
+}
 
-        function toggleStealth() {
-            const overlay = document.getElementById('stealthOverlay');
-            if(!isHidden) {
-                overlay.style.display = 'flex';
-                isHidden = true;
-            } else {
-                overlay.style.display = 'none';
-                isHidden = false;
-            }
-        }
+function doSearch(){
+  const q=document.getElementById('search-input').value.trim();
+  if(!q)return;
+  window.open('https://www.google.com/search?q='+encodeURIComponent(q),'_blank');
+}
+document.getElementById('search-input').addEventListener('keydown',e=>{ if(e.key==='Enter')doSearch(); });
+document.querySelectorAll('.g-btn').forEach(b=>b.addEventListener('click',doSearch));
 
-        // --- 4. 실시간 채팅 기능 ---
-        function joinChat() {
-            const nick = document.getElementById('chat-nick').value.trim();
-            const room = document.getElementById('chat-room').value.trim();
-            if(!nick || !room) { alert('닉네임과 방 코드를 입력하세요!'); return; }
-            
-            currentNick = nick;
-            currentRoom = room;
-            
-            document.getElementById('chat-messages').innerHTML = `<div class='msg' style='background:#fff5f5; color:#e03131;'>👉 [${room}] 방에 연결되었습니다.</div>`;
-            
-            if(chatRef) chatRef.off();
-            chatRef = database.ref('chats/' + room);
-            chatRef.limitToLast(50).on('child_added', (snapshot) => {
-                const data = snapshot.val();
-                displayMessage(data.sender, data.text);
-            });
-        }
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  const map={search:0,chat:1,video:2};
+  document.querySelectorAll('.tab')[map[tab]].classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+}
+window.switchTab=switchTab;
 
-        function sendChatMessage() {
-            const input = document.getElementById('chat-input');
-            if(!input.value.trim() || !currentRoom) return;
-            
-            database.ref('chats/' + currentRoom).push({
-                sender: currentNick,
-                text: input.value.trim()
-            });
-            input.value = '';
-        }
+// ── 채팅 ──
+let myNick='', roomCode='', msgRef=null, mySessionId=Date.now()+'_'+Math.random();
 
-        function displayMessage(sender, text) {
-            const container = document.getElementById('chat-messages');
-            const msgDiv = document.createElement('div');
-            msgDiv.classList.add('msg');
-            if(sender === currentNick) msgDiv.classList.add('me');
-            msgDiv.innerText = `${sender}: ${text}`;
-            container.appendChild(msgDiv);
-            container.scrollTop = container.scrollHeight;
-        }
+function joinRoom(){
+  const nick=document.getElementById('input-nick').value.trim();
+  const room=document.getElementById('input-room').value.trim();
+  if(!nick){showToast('닉네임을 입력하세요');return;}
+  if(!room){showToast('방 코드를 입력하세요');return;}
+  myNick=nick; roomCode=room;
+  document.getElementById('room-setup').style.display='none';
+  document.getElementById('chat-ui').classList.add('show');
+  document.getElementById('chat-room-name').textContent='방: '+room;
+  msgRef=ref(db,'rooms/'+roomCode+'/messages');
+  const joinTime=Date.now();
+  push(msgRef,{type:'join',nick:myNick,time:getTime(),ts:serverTimestamp(),sid:mySessionId});
+  onChildAdded(msgRef,(snap)=>{
+    const d=snap.val();
+    if(!d||d.sid===mySessionId) return;
+    if(d.ts && d.ts < joinTime-3000) return;
+    if(d.type==='join') addSys(d.nick+' 님이 입장했습니다');
+    else if(d.type==='leave') addSys(d.nick+' 님이 나갔습니다');
+    else if(d.type==='msg') addMsg(d.nick,d.text,d.time,false);
+  });
+}
+window.joinRoom=joinRoom;
 
-        // --- 5. WebRTC 영상통화 기능 (Mock형식 및 로컬 연결 기본 제공) ---
-        let localStream;
-        let isAudioOn = true;
-        let isVideoOn = true;
+function sendMsg(){
+  const input=document.getElementById('msg-input');
+  const text=input.value.trim();
+  if(!text||!msgRef)return;
+  const time=getTime();
+  push(msgRef,{type:'msg',nick:myNick,text,time,ts:serverTimestamp(),sid:mySessionId});
+  addMsg(myNick,text,time,true);
+  input.value='';
+}
+window.sendMsg=sendMsg;
+document.getElementById('msg-input').addEventListener('keydown',e=>{ if(e.key==='Enter')sendMsg(); });
 
-        async function joinVideo() {
-            const vRoom = document.getElementById('video-room').value.trim();
-            if(!vRoom) { alert('영상 방 코드를 입력하세요!'); return; }
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                document.getElementById('localVideo').srcObject = localStream;
-                alert(`[${vRoom}] 영상 통화 방에 접속 시도 중... (서버리스 P2P 동기화 준비 완료)`);
-            } catch (err) {
-                alert('카메라 또는 마이크 권한을 허용해 주세요!');
-            }
-        }
+function leaveRoom(){
+  if(msgRef) push(msgRef,{type:'leave',nick:myNick,time:getTime(),ts:serverTimestamp(),sid:mySessionId});
+  msgRef=null;
+  document.getElementById('messages').innerHTML='';
+  document.getElementById('chat-ui').classList.remove('show');
+  document.getElementById('room-setup').style.display='flex';
+}
+window.leaveRoom=leaveRoom;
 
-        function toggleAudio() {
-            if(!localStream) return;
-            isAudioOn = !isAudioOn;
-            localStream.getAudioTracks()[0].enabled = isAudioOn;
-            const btn = document.getElementById('btn-audio');
-            btn.innerText = isAudioOn ? "🎤 마이크 켬" : "🔇 마이크 끔";
-            btn.className = isAudioOn ? "btn-on" : "btn-off";
-        }
+function addMsg(nick,text,time,isMe){
+  const msgs=document.getElementById('messages');
+  const div=document.createElement('div');
+  div.className='msg-row'+(isMe?' me':'');
+  div.innerHTML=`<div class="bubble">${esc(text)}</div><div class="msg-meta">${isMe?'':esc(nick)+' · '}${time}</div>`;
+  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
+}
+function addSys(text){
+  const msgs=document.getElementById('messages');
+  const div=document.createElement('div');
+  div.className='sys-msg'; div.textContent=text;
+  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
+}
 
-        function toggleVideo() {
-            if(!localStream) return;
-            isVideoOn = !isVideoOn;
-            localStream.getVideoTracks()[0].enabled = isVideoOn;
-            const btn = document.getElementById('btn-video');
-            btn.innerText = isVideoOn ? "📷 카메라 켬" : "🚫 카메라 끔";
-            btn.className = isVideoOn ? "btn-on" : "btn-off";
-        }
+// ── 영상통화 (WebRTC) ──
+let localStream=null, peers={}, vNick='', vRoom='', vSid=Date.now()+'v'+Math.random();
+let micOn=true, camOn=true;
+const ICE={iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]};
 
+async function joinVideo(){
+  const nick=document.getElementById('v-nick').value.trim();
+  const room=document.getElementById('v-room').value.trim();
+  if(!nick){showToast('닉네임을 입력하세요');return;}
+  if(!room){showToast('방 코드를 입력하세요');return;}
+  vNick=nick; vRoom=room;
 
-        // --- 6. ZEP 스타일 좀비 미니 게임 (Firebase 멀티플레이 연동) ---
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        let gameLoopInterval = null;
-        
-        let myId = '_' + Math.random().toString(36).substr(2, 9);
-        let players = {};
-        let zombies = [];
-        let score = 0;
-        let isGameOver = false;
+  try {
+    localStream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+  } catch(e){
+    showToast('카메라/마이크 권한을 허용해주세요!'); return;
+  }
 
-        // 플레이어 제어 키 정보
-        let keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
-        window.addEventListener('keydown', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = true; });
-        window.addEventListener('keyup', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+  document.getElementById('video-setup').style.display='none';
+  document.getElementById('video-ui').classList.add('show');
+  document.getElementById('video-room-name').textContent='방: '+room;
+  document.getElementById('video-status').textContent='연결됨 ✓';
+  document.getElementById('video-status').style.color='#34a853';
 
-        function joinGame() {
-            const gNick = document.getElementById('game-nick').value.trim();
-            const gRoom = document.getElementById('game-room').value.trim();
-            if(!gNick || !gRoom) { alert('닉네임과 게임 방 코드를 입력하세요!'); return; }
+  addVideoTile('local', localStream, nick+' (나)');
 
-            document.getElementById('gameIntro').style.display = 'none';
-            document.getElementById('gameStatus').style.display = 'block';
-            canvas.style.display = 'block';
+  const sigRef=ref(db,'video/'+vRoom+'/signals');
+  const presRef=ref(db,'video/'+vRoom+'/presence/'+vSid);
+  await set(presRef,{nick:vNick, sid:vSid, ts:serverTimestamp()});
 
-            // 초기 내 위치 생성 (ZEP 형태의 2D 도트 아바타 대용 원형)
-            players[myId] = {
-                x: 350, y: 225, nick: gNick, color: '#' + Math.floor(Math.random()*16777215).toString(16), isDead: false
-            };
+  // 기존 참가자들에게 offer
+  const presListRef=ref(db,'video/'+vRoom+'/presence');
+  onValue(presListRef,async(snap)=>{
+    const all=snap.val()||{};
+    for(const sid of Object.keys(all)){
+      if(sid!==vSid && !peers[sid]){
+        await createOffer(sid);
+      }
+    }
+  },{onlyOnce:true});
 
-            if(gameRef) gameRef.off();
-            gameRef = database.ref('games/' + gRoom);
+  // 시그널 수신
+  onChildAdded(sigRef,async(snap)=>{
+    const d=snap.val();
+    if(!d||d.to!==vSid) return;
+    if(d.type==='offer') await handleOffer(d);
+    else if(d.type==='answer') await handleAnswer(d);
+    else if(d.type==='candidate') await handleCandidate(d);
+  });
+}
+window.joinVideo=joinVideo;
 
-            // 다른 친구들의 위치 정보 수신
-            gameRef.child('players').on('value', (snapshot) => {
-                const data = snapshot.val() || {};
-                for(let id in data) {
-                    if(id !== myId) {
-                        players[id] = data[id];
-                    }
-                }
-            });
+function addVideoTile(id, stream, name){
+  const grid=document.getElementById('video-grid');
+  const tile=document.createElement('div');
+  tile.className='video-tile'; tile.id='tile-'+id;
+  const count=grid.children.length+1;
+  const size=count<=1?'min(480px,90vw)':count<=2?'min(320px,45vw)':'min(240px,30vw)';
+  tile.style.cssText=`width:${size};height:${size==='min(480px,90vw)'?'360px':'240px'};`;
+  const video=document.createElement('video');
+  video.autoplay=true; video.playsInline=true; video.muted=(id==='local');
+  video.srcObject=stream;
+  const tag=document.createElement('div');
+  tag.className='name-tag'; tag.textContent=name;
+  tile.appendChild(video); tile.appendChild(tag);
+  grid.appendChild(tile);
+}
 
-            // 좀비 위치 동기화 (방장이 생성하는 구조 대용으로 공용 수신)
-            gameRef.child('zombies').on('value', (snapshot) => {
-                if(snapshot.val()) zombies = snapshot.val();
-            });
+async function createOffer(toSid){
+  const pc=new RTCPeerConnection(ICE);
+  peers[toSid]=pc;
+  localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
+  pc.onicecandidate=e=>{ if(e.candidate) sendSignal({type:'candidate',to:toSid,from:vSid,candidate:e.candidate}); };
+  pc.ontrack=e=>{ if(!document.getElementById('tile-'+toSid)) addVideoTile(toSid,e.streams[0],'친구'); };
+  const offer=await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  sendSignal({type:'offer',to:toSid,from:vSid,sdp:offer.sdp,nick:vNick});
+}
 
-            isGameOver = false;
-            score = 0;
-            
-            if(gameLoopInterval) clearInterval(gameLoopInterval);
-            gameLoopInterval = setInterval(updateGame, 1000 / 30); // 30 FPS 로 구동
-        }
+async function handleOffer(d){
+  const pc=new RTCPeerConnection(ICE);
+  peers[d.from]=pc;
+  localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
+  pc.onicecandidate=e=>{ if(e.candidate) sendSignal({type:'candidate',to:d.from,from:vSid,candidate:e.candidate}); };
+  pc.ontrack=e=>{ if(!document.getElementById('tile-'+d.from)) addVideoTile(d.from,e.streams[0],d.nick||'친구'); };
+  await pc.setRemoteDescription({type:'offer',sdp:d.sdp});
+  const answer=await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+  sendSignal({type:'answer',to:d.from,from:vSid,sdp:answer.sdp});
+}
 
-        function updateGame() {
-            if(isGameOver) return;
+async function handleAnswer(d){
+  const pc=peers[d.from];
+  if(pc) await pc.setRemoteDescription({type:'answer',sdp:d.sdp});
+}
 
-            // 내 위치 조작 및 경계 제한 (ZEP 방식 이동 조작)
-            let speed = 5;
-            let me = players[myId];
-            if(!me.isDead) {
-                if(keys.ArrowUp && me.y > 15) me.y -= speed;
-                if(keys.ArrowDown && me.y < canvas.height - 15) me.y += speed;
-                if(keys.ArrowLeft && me.x > 15) me.x -= speed;
-                if(keys.ArrowRight && me.x < canvas.width - 15) me.x += speed;
+async function handleCandidate(d){
+  const pc=peers[d.from];
+  if(pc) try{ await pc.addIceCandidate(d.candidate); }catch(e){}
+}
 
-                // 점수 가산
-                score++;
-                document.getElementById('gameStatus').innerText = `점수: ${score} | 생존상태: 생존`;
+function sendSignal(obj){
+  push(ref(db,'video/'+vRoom+'/signals'),{...obj,ts:serverTimestamp()});
+}
 
-                // 나의 최신 좌표 서버에 전송하여 친구 화면에 업데이트
-                if(gameRef) {
-                    gameRef.child('players').child(myId).set(me);
-                }
-            }
+function toggleMic(){
+  micOn=!micOn;
+  localStream.getAudioTracks().forEach(t=>t.enabled=micOn);
+  document.getElementById('btn-mic').textContent=micOn?'🎤':'🔇';
+  document.getElementById('btn-mic').classList.toggle('off',!micOn);
+}
+window.toggleMic=toggleMic;
 
-            // 호스트 유저가 주기적으로 좀비 데이터 생성 및 추적 연동 (무작위 움직임 구현)
-            if(score % 20 === 0 && !me.isDead) {
-                // 좀비 자동 추가 알고리즘
-                if(zombies.length < 8) {
-                    zombies.push({
-                        x: Math.random() * canvas.width,
-                        y: Math.random() * canvas.height,
-                        vx: (Math.random() - 0.5) * 6,
-                        vy: (Math.random() - 0.5) * 6
-                    });
-                }
-            }
+function toggleCam(){
+  camOn=!camOn;
+  localStream.getVideoTracks().forEach(t=>t.enabled=camOn);
+  document.getElementById('btn-cam').textContent=camOn?'📷':'🚫';
+  document.getElementById('btn-cam').classList.toggle('off',!camOn);
+}
+window.toggleCam=toggleCam;
 
-            // 좀비 이동 및 충돌 체크
-            zombies.forEach(z => {
-                z.x += z.vx;
-                z.y += z.vy;
+function leaveVideo(){
+  Object.values(peers).forEach(pc=>pc.close());
+  peers={};
+  if(localStream) localStream.getTracks().forEach(t=>t.stop());
+  localStream=null;
+  remove(ref(db,'video/'+vRoom+'/presence/'+vSid));
+  document.getElementById('video-grid').innerHTML='';
+  document.getElementById('video-ui').classList.remove('show');
+  document.getElementById('video-setup').style.display='flex';
+}
+window.leaveVideo=leaveVideo;
 
-                // 벽 튕기기
-                if(z.x < 0 || z.x > canvas.width) z.vx *= -1;
-                if(z.y < 0 || z.y > canvas.height) z.vy *= -1;
-
-                // 나와 좀비 충돌 판정 (거리 구하기)
-                let dist = Math.hypot(me.x - z.x, me.y - z.y);
-                if(dist < 22 && !me.isDead) { // 충돌함!
-                    me.isDead = true;
-                    isGameOver = true;
-                    document.getElementById('gameStatus').innerText = `최종 점수: ${score} | 생존상태: 💀 게임오버 (좀비가 됨)`;
-                    if(gameRef) gameRef.child('players').child(myId).set(me);
-                }
-            });
-
-            // 화면 그리기 (렌더링)
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // 1. 좀비 그리기 (빨간색 몬스터)
-            zombies.forEach(z => {
-                ctx.beginPath();
-                ctx.arc(z.x, z.y, 12, 0, Math.PI * 2);
-                ctx.fillStyle = '#ea4335';
-                ctx.fill();
-                ctx.closePath();
-            });
-
-            // 2. 모든 플레이어(나 + 친구들) 캐릭터 그리기
-            for(let id in players) {
-                let p = players[id];
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 15, 0, Math.PI * 2);
-                ctx.fillStyle = p.isDead ? '#868e96' : p.color;
-                ctx.fill();
-                ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-                ctx.closePath();
-
-                // 플레이어 닉네임 텍스트 표시
-                ctx.fillStyle = '#fff';
-                ctx.font = '12px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(p.nick + (p.isDead ? ' (좀비)' : ''), p.x, p.y - 22);
-            }
-        }
-    </script>
+// ── 숨기기 ──
+let hidden=false;
+document.addEventListener('keydown',e=>{
+  if(e.altKey){ e.preventDefault(); hidden=!hidden; document.getElementById('hidden-overlay').classList.toggle('show',hidden); }
+});
+</script>
 </body>
 </html>
