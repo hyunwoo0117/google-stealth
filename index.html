@@ -9,50 +9,32 @@
   * { margin:0; padding:0; box-sizing:border-box; font-family:arial,sans-serif; }
   body { background:#fff; height:100vh; overflow:hidden; }
   #app { display:flex; flex-direction:column; height:100vh; }
-
-  #topbar {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:8px 16px; border-bottom:1px solid #e0e0e0; background:#fff; flex-shrink:0;
-  }
+  #topbar { display:flex; align-items:center; justify-content:space-between; padding:8px 16px; border-bottom:1px solid #e0e0e0; background:#fff; flex-shrink:0; }
   #topbar-left { display:flex; align-items:center; gap:24px; }
   #topbar-left a { font-size:13px; color:#202124; text-decoration:none; }
   .g-b{color:#4285F4}.g-r{color:#EA4335}.g-y{color:#FBBC05}.g-g{color:#34A853}
   .g-logo { font-size:22px; font-weight:700; letter-spacing:-1px; }
   .btn-signin { background:#1a73e8;color:#fff;border:none;border-radius:4px;padding:8px 16px;font-size:14px;cursor:pointer; }
-
   #tabs { display:flex; border-bottom:1px solid #e0e0e0; flex-shrink:0; }
   .tab { padding:10px 20px;font-size:13px;cursor:pointer;color:#5f6368;border-bottom:2px solid transparent;user-select:none; }
   .tab.active { color:#1a73e8;border-bottom:2px solid #1a73e8;font-weight:500; }
   .tab:hover { background:#f1f3f4; }
-
   .panel { flex:1;overflow-y:auto;display:none;flex-direction:column;min-height:0; }
   .panel.active { display:flex; }
-
-  /* Search */
   #search-hero { display:flex;flex-direction:column;align-items:center;padding:80px 20px 20px;gap:20px; }
   .big-logo { font-size:72px;font-weight:700;letter-spacing:-4px;line-height:1; }
-  #search-box-wrap {
-    display:flex;align-items:center;width:100%;max-width:580px;
-    border:1px solid #dfe1e5;border-radius:24px;padding:10px 16px;
-    box-shadow:0 1px 3px rgba(0,0,0,.1);gap:10px;
-  }
+  #search-box-wrap { display:flex;align-items:center;width:100%;max-width:580px;border:1px solid #dfe1e5;border-radius:24px;padding:10px 16px;box-shadow:0 1px 3px rgba(0,0,0,.1);gap:10px; }
   #search-box-wrap:focus-within { box-shadow:0 1px 6px rgba(0,0,0,.2); }
   #search-input { flex:1;border:none;outline:none;font-size:16px;color:#202124; }
   .search-btns { display:flex;gap:10px;margin-top:4px; }
   .g-btn { background:#f8f9fa;border:1px solid #f8f9fa;border-radius:4px;padding:9px 23px;font-size:14px;color:#3c4043;cursor:pointer; }
-  .g-btn:hover { border-color:#dadce0;box-shadow:0 1px 2px rgba(0,0,0,.1); }
-
-  /* Chat */
-  #room-setup {
-    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px;
-  }
+  .g-btn:hover { border-color:#dadce0; }
+  #room-setup { flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px; }
   .room-input-wrap { display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px; }
   .room-input-wrap input { border:1px solid #dfe1e5;border-radius:4px;padding:10px 14px;font-size:14px;outline:none; }
   .room-input-wrap input:focus { border-color:#1a73e8; }
   .room-btn { background:#1a73e8;color:#fff;border:none;border-radius:4px;padding:10px;font-size:14px;cursor:pointer; }
-  .room-btn:hover { background:#1557b0; }
   .room-desc { font-size:13px;color:#5f6368;text-align:center;max-width:300px;line-height:1.6; }
-
   #chat-ui { display:none;flex:1;flex-direction:column;min-height:0; }
   #chat-ui.show { display:flex; }
   #chat-header { padding:12px 20px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;gap:12px;flex-shrink:0; }
@@ -72,14 +54,11 @@
   #msg-input { flex:1;border:1px solid #dfe1e5;border-radius:24px;padding:10px 16px;font-size:14px;outline:none; }
   #msg-input:focus { border-color:#1a73e8; }
   #send-btn { background:#1a73e8;color:#fff;border:none;border-radius:50%;width:38px;height:38px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center; }
-
-  /* Hidden overlay */
   #hidden-overlay { display:none;position:fixed;inset:0;background:#fff;z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:10px; }
   #hidden-overlay.show { display:flex; }
   #hidden-overlay .emoji { font-size:52px; }
   #hidden-overlay p { font-size:15px;color:#5f6368; }
   #hidden-overlay small { font-size:13px;color:#9aa0a6; }
-
   #toast { position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#323232;color:#fff;border-radius:6px;padding:10px 20px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .3s;white-space:nowrap; }
   #toast.show { opacity:1; }
 </style>
@@ -93,18 +72,13 @@
     </div>
     <div><button class="btn-signin">로그인</button></div>
   </div>
-
   <div id="tabs">
     <div class="tab active" onclick="switchTab('search')">🔍 검색</div>
     <div class="tab" onclick="switchTab('chat')">💬 메시지</div>
   </div>
-
-  <!-- Search -->
   <div id="panel-search" class="panel active">
     <div id="search-hero">
-      <div class="big-logo">
-        <span class="g-b">G</span><span class="g-r">o</span><span class="g-y">o</span><span class="g-b">g</span><span class="g-g">l</span><span class="g-r">e</span>
-      </div>
+      <div class="big-logo"><span class="g-b">G</span><span class="g-r">o</span><span class="g-y">o</span><span class="g-b">g</span><span class="g-g">l</span><span class="g-r">e</span></div>
       <div id="search-box-wrap">
         <svg width="20" height="20" fill="#9aa0a6" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
         <input type="text" id="search-input" placeholder="Google 검색 또는 URL 입력" />
@@ -115,14 +89,9 @@
       </div>
     </div>
   </div>
-
-  <!-- Chat -->
   <div id="panel-chat" class="panel">
     <div id="room-setup">
-      <div class="big-logo" style="font-size:36px;">
-        <span class="g-b">G</span><span class="g-r">o</span><span class="g-y">o</span><span class="g-b">g</span><span class="g-g">l</span><span class="g-r">e</span>
-        <span style="font-size:16px;font-weight:400;color:#5f6368;"> 메시지</span>
-      </div>
+      <div class="big-logo" style="font-size:36px;"><span class="g-b">G</span><span class="g-r">o</span><span class="g-y">o</span><span class="g-b">g</span><span class="g-g">l</span><span class="g-r">e</span> <span style="font-size:16px;font-weight:400;color:#5f6368;">메시지</span></div>
       <p class="room-desc">친구와 <b>같은 방 코드</b>를 입력하면<br>실시간 채팅 가능해요 😊</p>
       <div class="room-input-wrap">
         <input type="text" id="input-nick" placeholder="닉네임 (예: 현우)" maxlength="10" />
@@ -130,7 +99,6 @@
         <button class="room-btn" onclick="joinRoom()">입장하기</button>
       </div>
     </div>
-
     <div id="chat-ui">
       <div id="chat-header">
         <div id="chat-room-info">
@@ -147,7 +115,6 @@
     </div>
   </div>
 </div>
-
 <div id="hidden-overlay">
   <div class="emoji">😴</div>
   <p>앱이 숨겨졌습니다</p>
@@ -155,18 +122,37 @@
 </div>
 <div id="toast"></div>
 
-<script>
-// 방문기록 안 남기기
-history.replaceState(null, '', location.href);
-window.addEventListener('beforeunload', () => { history.replaceState(null, '', location.href); });
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, push, onChildAdded, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
-// 검색
+const firebaseConfig = {
+  apiKey: "AIzaSyC_VMZjnyTewohDSkQU_idbHXrhqSykkZA",
+  authDomain: "stealth-chat-ebea8.firebaseapp.com",
+  databaseURL: "https://stealth-chat-ebea8-default-rtdb.firebaseio.com",
+  projectId: "stealth-chat-ebea8",
+  storageBucket: "stealth-chat-ebea8.firebasestorage.app",
+  messagingSenderId: "322324385622",
+  appId: "1:322324385622:web:c02fd2b0da8317129f50f7"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let myNick='', roomCode='', msgRef=null, mySessionId=Date.now()+'_'+Math.random();
+
+function getTime(){
+  const n=new Date(),h=n.getHours(),m=String(n.getMinutes()).padStart(2,'0');
+  return h>=12?`오후 ${h===12?12:h-12}:${m}`:`오전 ${h||12}:${m}`;
+}
+
 function doSearch(){
   const q=document.getElementById('search-input').value.trim();
   if(!q)return;
   window.open('https://www.google.com/search?q='+encodeURIComponent(q),'_blank');
 }
-document.getElementById('search-input').addEventListener('keydown',e=>{ if(e.key==='Enter') doSearch(); });
+document.getElementById('search-input').addEventListener('keydown',e=>{ if(e.key==='Enter')doSearch(); });
+document.querySelectorAll('.g-btn').forEach(b=>b.addEventListener('click',doSearch));
 
 function switchTab(tab){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -179,70 +165,59 @@ function switchTab(tab){
     document.getElementById('panel-chat').classList.add('active');
   }
 }
-
-// 채팅
-let ws=null, myNick='', roomCode='', reconnectTimer=null, manualLeave=false;
-
-function getTime(){
-  const n=new Date(), h=n.getHours(), m=String(n.getMinutes()).padStart(2,'0');
-  return h>=12?`오후 ${h===12?12:h-12}:${m}`:`오전 ${h||12}:${m}`;
-}
+window.switchTab=switchTab;
 
 function joinRoom(){
   const nick=document.getElementById('input-nick').value.trim();
   const room=document.getElementById('input-room').value.trim();
-  if(!nick){ showToast('닉네임을 입력하세요'); return; }
-  if(!room){ showToast('방 코드를 입력하세요'); return; }
-  myNick=nick; roomCode=room; manualLeave=false;
+  if(!nick){showToast('닉네임을 입력하세요');return;}
+  if(!room){showToast('방 코드를 입력하세요');return;}
+  myNick=nick; roomCode=room;
   document.getElementById('room-setup').style.display='none';
   document.getElementById('chat-ui').classList.add('show');
   document.getElementById('chat-room-name').textContent='방: '+room;
-  connect();
-}
+  document.getElementById('chat-status').textContent='연결됨 ✓';
+  document.getElementById('chat-status').style.color='#34a853';
 
-function connect(){
-  setStatus('연결 중...','#fbbc05');
-  try {
-    ws=new WebSocket('wss://ws.piesocket.com/v3/'+encodeURIComponent(roomCode)+'?api_key=oCdCMcMPQpbvNjUIzqtvF1d89XGea9Yi40lqc3A&notify_self=1');
-  } catch(e){ setStatus('연결 실패','#ea4335'); return; }
+  msgRef=ref(db,'rooms/'+roomCode+'/messages');
+  const joinTime=Date.now();
 
-  ws.onopen=()=>{
-    setStatus('연결됨 ✓','#34a853');
-    broadcast({type:'join', nick:myNick});
-  };
-  ws.onmessage=e=>{
-    try {
-      const d=JSON.parse(e.data);
-      if(!d.type || d.room!==roomCode) return;
-      if(d.type==='join' && d.nick!==myNick) addSys(d.nick+' 님이 입장했습니다');
-      else if(d.type==='leave' && d.nick!==myNick) addSys(d.nick+' 님이 나갔습니다');
-      else if(d.type==='msg' && d.nick!==myNick) addMsg(d.nick, d.text, d.time, false);
-    } catch{}
-  };
-  ws.onclose=()=>{
-    if(manualLeave) return;
-    setStatus('재연결 중...','#ea4335');
-    reconnectTimer=setTimeout(connect, 3000);
-  };
-  ws.onerror=()=>{ ws.close(); };
-}
+  push(msgRef,{type:'join',nick:myNick,time:getTime(),ts:serverTimestamp(),sid:mySessionId});
 
-function broadcast(obj){
-  if(ws && ws.readyState===1) ws.send(JSON.stringify({...obj, room:roomCode}));
+  onChildAdded(msgRef,(snap)=>{
+    const d=snap.val();
+    if(!d) return;
+    if(d.sid===mySessionId) return;
+    if(d.ts && d.ts < joinTime-3000) return;
+    if(d.type==='join') addSys(d.nick+' 님이 입장했습니다');
+    else if(d.type==='leave') addSys(d.nick+' 님이 나갔습니다');
+    else if(d.type==='msg') addMsg(d.nick,d.text,d.time,false);
+  });
 }
+window.joinRoom=joinRoom;
 
 function sendMsg(){
   const input=document.getElementById('msg-input');
   const text=input.value.trim();
-  if(!text) return;
+  if(!text||!msgRef)return;
   const time=getTime();
-  broadcast({type:'msg', nick:myNick, text, time});
-  addMsg(myNick, text, time, true);
+  push(msgRef,{type:'msg',nick:myNick,text,time,ts:serverTimestamp(),sid:mySessionId});
+  addMsg(myNick,text,time,true);
   input.value='';
 }
-document.getElementById('msg-input').addEventListener('keydown',e=>{ if(e.key==='Enter') sendMsg(); });
+window.sendMsg=sendMsg;
+document.getElementById('msg-input').addEventListener('keydown',e=>{ if(e.key==='Enter')sendMsg(); });
 
-function addMsg(nick, text, time, isMe){
+function leaveRoom(){
+  if(msgRef) push(msgRef,{type:'leave',nick:myNick,time:getTime(),ts:serverTimestamp(),sid:mySessionId});
+  msgRef=null;
+  document.getElementById('messages').innerHTML='';
+  document.getElementById('chat-ui').classList.remove('show');
+  document.getElementById('room-setup').style.display='flex';
+}
+window.leaveRoom=leaveRoom;
+
+function addMsg(nick,text,time,isMe){
   const msgs=document.getElementById('messages');
   const div=document.createElement('div');
   div.className='msg-row'+(isMe?' me':'');
@@ -260,39 +235,19 @@ function addSys(text){
   msgs.scrollTop=msgs.scrollHeight;
 }
 
-function setStatus(text, color){
-  const el=document.getElementById('chat-status');
-  el.textContent=text; el.style.color=color;
-}
-
-function leaveRoom(){
-  manualLeave=true;
-  broadcast({type:'leave', nick:myNick});
-  if(ws) ws.close();
-  if(reconnectTimer) clearTimeout(reconnectTimer);
-  ws=null;
-  document.getElementById('messages').innerHTML='';
-  document.getElementById('chat-ui').classList.remove('show');
-  document.getElementById('room-setup').style.display='flex';
-}
-
 function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-// Alt키로 숨기기
-let hidden=false;
-document.addEventListener('keydown',e=>{
-  if(e.altKey){
-    e.preventDefault();
-    hidden=!hidden;
-    document.getElementById('hidden-overlay').classList.toggle('show', hidden);
-  }
-});
 
 function showToast(msg){
   const el=document.getElementById('toast');
   el.textContent=msg; el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'), 2000);
+  setTimeout(()=>el.classList.remove('show'),2000);
 }
+window.showToast=showToast;
+
+let hidden=false;
+document.addEventListener('keydown',e=>{
+  if(e.altKey){ e.preventDefault(); hidden=!hidden; document.getElementById('hidden-overlay').classList.toggle('show',hidden); }
+});
 </script>
 </body>
 </html>
